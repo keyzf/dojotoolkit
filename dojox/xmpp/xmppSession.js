@@ -272,10 +272,10 @@ dojo.extend(dojox.xmpp.xmppSession, {
 							//console.log("xmppSession::chatHandler() Unknown node type: ",n.nodeName);
 					}
 				}
-				/*//console.log("Foo", n, n.nodeName);
+				//console.log("Foo", n, n.nodeName);
 				if(n.getAttribute('xmlns')==dojox.xmpp.chat.CHAT_STATE_NS){
 					chatState = n.nodeName;
-				}*/
+				}
 			}
 
 			var found = -1;
