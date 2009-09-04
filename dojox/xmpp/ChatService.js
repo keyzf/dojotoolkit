@@ -108,6 +108,7 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 
 		if (this.useChatState){
 			message.append(dojox.xmpp.util.createElement("active",{xmlns: dojox.xmpp.chat.CHAT_STATE_NS},true));
+			this._currentState = dojox.xmpp.chat.ACTIVE_STATE;
 		}
 		message.append("</message>");
 	
