@@ -41,15 +41,13 @@ dojo.declare("dojox.storage.WhatWGStorageProvider", [ dojox.storage.Provider ], 
 	},
 	
 	isAvailable: function(){
-		try{
-			var myStorage = globalStorage[this._getDomain()]; 
-		}catch(e){
-			this._available = false;
-			return this._available;
-		}
-		
-		this._available = true;	
-		return this._available;
+        if(localStorage){
+            this._available = true;
+        }else{
+            this._available = false;
+        }
+
+        return this._available;
 	},
 
 	put: function(key, value, resultsHandler, namespace){
@@ -92,8 +90,7 @@ dojo.declare("dojox.storage.WhatWGStorageProvider", [ dojox.storage.Provider ], 
 		
 		// try to store the value	
 		try{
-			var myStorage = globalStorage[this._domain];
-			myStorage.setItem(key, value);
+			localStorage.setItem(key, value);
 		}catch(e){
 			// indicate we failed
 			this._statusHandler.call(null, this.FAILED, key, e.toString(), namespace);
@@ -116,14 +113,11 @@ dojo.declare("dojox.storage.WhatWGStorageProvider", [ dojox.storage.Provider ], 
 		
 		// FIXME: Simplify this bug into a testcase and
 		// submit it to Firefox
-		var myStorage = globalStorage[this._domain];
-		var results = myStorage.getItem(key);
+		var results = localStorage.getItem(key);
 		
 		if(results == null || results == ""){
 			return null;
 		}
-		
-		results = results.value;
 		
 		// destringify the content back into a 
 		// real JavaScript object;
@@ -143,10 +137,9 @@ dojo.declare("dojox.storage.WhatWGStorageProvider", [ dojox.storage.Provider ], 
 		// simply enumerate through our array and save any string
 		// that starts with __
 		var found = {};
-		var myStorage = globalStorage[this._domain];
 		var tester = /^__([^_]*)_/;
-		for(var i = 0; i < myStorage.length; i++){
-			var currentKey = myStorage.key(i);
+		for(var i = 0; i < localStorage.length; i++){
+			var currentKey = localStorage.key(i);
 			if(tester.test(currentKey) == true){
 				var currentNS = currentKey.match(tester)[1];
 				// have we seen this namespace before?
@@ -179,10 +172,9 @@ dojo.declare("dojox.storage.WhatWGStorageProvider", [ dojox.storage.Provider ], 
 			namespaceTester = new RegExp("^__" + namespace + "_(.*)$");
 		}
 		
-		var myStorage = globalStorage[this._domain];
 		var keysArray = [];
-		for(var i = 0; i < myStorage.length; i++){
-			var currentKey = myStorage.key(i);
+		for(var i = 0; i < localStorage.length; i++){
+			var currentKey = localStorage.key(i);
 			if(namespaceTester.test(currentKey) == true){
 				// strip off the namespace portion
 				currentKey = currentKey.match(namespaceTester)[1];
@@ -212,23 +204,21 @@ dojo.declare("dojox.storage.WhatWGStorageProvider", [ dojox.storage.Provider ], 
 			namespaceTester = new RegExp("^__" + namespace + "_");
 		}
 		
-		var myStorage = globalStorage[this._domain];
 		var keys = [];
-		for(var i = 0; i < myStorage.length; i++){
-			if(namespaceTester.test(myStorage.key(i)) == true){
-				keys[keys.length] = myStorage.key(i);
+		for(var i = 0; i < localStorage.length; i++){
+			if(namespaceTester.test(localStorage.key(i)) == true){
+				keys[keys.length] = localStorage.key(i);
 			}
 		}
 		
-		dojo.forEach(keys, dojo.hitch(myStorage, "removeItem"));
+		dojo.forEach(keys, dojo.hitch(localStorage, "removeItem"));
 	},
 	
 	remove: function(key, namespace){
 		// get our full key name, which is namespace + key
 		key = this.getFullKey(key, namespace);
 		
-		var myStorage = globalStorage[this._domain];
-		myStorage.removeItem(key);
+		localStorage.removeItem(key);
 	},
 	
 	isPermanent: function(){
