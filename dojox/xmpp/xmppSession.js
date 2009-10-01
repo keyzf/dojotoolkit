@@ -19,6 +19,9 @@ dojox.xmpp.xmpp = {
 	XHTML_BODY_NS: "http://www.w3.org/1999/xhtml",
 	XHTML_IM_NS: "http://jabber.org/protocol/xhtml-im",
 
+	DISCO_INFO_NS: "http://jabber.org/protocol/disco#info",
+	DISCO_ITEMS_NS: "http://jabber.org/protocol/disco#items",
+
 	INACTIVE: "Inactive",
 	CONNECTED: "Connected",
 	ACTIVE: "Active",
