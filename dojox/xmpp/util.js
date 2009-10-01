@@ -151,3 +151,34 @@ dojox.xmpp.util.Base64.decode = function(input){
 	};
 	return b2s(dojox.encoding.base64.decode(input));
 }
+
+dojox.xmpp.util.getBareJid = function(jid){
+	var i = jid.indexOf('/');
+	if (i != -1){
+		return jid.substring(0, i);
+	}
+	return jid;
+}
+
+dojox.xmpp.util.getNodeFromJid = function(jid){
+    var i = jid.indexOf("@");
+    if(i !== -1){
+        return jid.substring(0, i);
+    }
+    return "";
+}
+
+dojox.xmpp.util.getDomainFromJid = function(jid){
+    var i = jid.indexOf("@");
+    var j = jid.indexOf("/");
+    j = (j === -1) ? jid.length : j;
+    return jid.substring((i + 1), j);
+}
+
+dojox.xmpp.util.getResourceFromJid = function(jid){
+	var i = jid.indexOf('/');
+	if (i != -1){
+		return jid.substring((i + 1), jid.length);
+	}
+	return "";
+}
