@@ -5,6 +5,7 @@ dojo.require("dojox.xmpp.RosterService");
 dojo.require("dojox.xmpp.PresenceService");
 dojo.require("dojox.xmpp.UserService");
 dojo.require("dojox.xmpp.ChatService");
+dojo.require("dojox.xmpp.MucService");
 dojo.require("dojox.xmpp.sasl");
 
 dojox.xmpp.xmpp = {
@@ -52,6 +53,7 @@ dojox.xmpp.xmpp = {
 dojox.xmpp.xmppSession = function(props){
 	this.roster = [];
 	this.chatRegister = [];
+	this.mucRegister = [];
 	this._iqId = Math.round(Math.random() * 1000000000);
 
 	//mixin any options that we want to provide to this service
@@ -128,6 +130,12 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		messageHandler: function(msg){
 			//console.log("xmppSession::messageHandler() ",msg);
+			var mucInstance = this.isMucJid(msg.getAttribute("from"));
+			if(mucInstance){
+				mucInstance.handleMessage(msg);
+				return;
+			}
+			
 			switch(msg.getAttribute('type')){
 				case "chat":
 					this.chatHandler(msg);
@@ -151,7 +159,13 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		},
 
 		presenceHandler: function(msg){
-			//console.log("xmppSession::presenceHandler()");
+			//console.log("xmppSession::presenceHandler()", msg);
+			var mucInstance = this.isMucJid(msg.getAttribute("from"));
+			if(mucInstance){
+				mucInstance.handlePresence(msg);
+				return;
+			}
+			
 			switch(msg.getAttribute('type')){
 				case 'subscribe':
 					//console.log("PresenceHandler: ", msg.getAttribute('from'));
@@ -331,6 +345,23 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			}
 		},
 
+		isMucJid: function(jid){
+			var domain = dojox.xmpp.util.getDomainFromJid(jid);
+			var found = -1;
+			for(var i = 0; i < this.mucRegister.length; ++i){
+				var mucInstance = this.mucRegister[i];
+				if(mucInstance.domain === domain){
+					found = i;
+					break;
+				}
+			}
+			if(found > -1){
+				return this.mucRegister[found];
+			}else{
+				return null;
+			}
+		},
+
 		simpleMessageHandler: function(msg){
 			//console.log("xmppSession::simpleMessageHandler() ", msg);
 		},
@@ -341,7 +372,13 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			this.onRegisterChatInstance(chatInstance, message);
 			chatInstance.recieveMessage(message,true);
 		},
-		
+
+		registerMucInstance: function(mucInstance){
+			mucInstance.setSession(this);
+			this.mucRegister.push(mucInstance);
+			this.onRegisterMucInstance(mucInstance);
+		},
+
 		iqSetHandler: function(msg){
 			if (msg.hasChildNodes()){
 				var fn = msg.firstChild;
@@ -775,6 +812,8 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		onRegisterChatInstance: function(chatInstance, message){
 			////console.log("xmppSession::onRegisterChatInstance()");
 		},
+
+		onRegisterMucInstance: function(mucInstance){},
 
 		onRosterAdded: function(ri){},
 		onRosterRemoved: function(ri){},
