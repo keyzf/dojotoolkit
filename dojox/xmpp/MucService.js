@@ -10,13 +10,23 @@ dojox.xmpp.muc = {
     UNIQUE_NS: "http://jabber.org/protocol/muc#unique"
 };
 
+dojox.xmpp.muc.roomState = {
+    NONE: 0,
+    ENTERING: 1,
+    ENTERED: 2,
+    EXITING: 3
+}
+
 dojo.declare("dojox.xmpp.muc.Room", null, {
+    state: dojox.xmpp.muc.roomState.NONE,
+    
     constructor: function(jid, mucService){
         this.bareJid = jid;
         this.roomId = dojox.xmpp.util.getNodeFromJid(jid);
         this.domain = dojox.xmpp.util.getDomainFromJid(jid);
         this.mucService = mucService;
         this.session = mucService.session;
+        this._occupants = {};
     },
 
     roomJid: function(){
@@ -117,7 +127,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
     },
 
     enter: function(nick, password){
-        if(this.entered){
+        if(this.state === dojox.xmpp.muc.roomState.ENTERED){
             return;
         }
 
@@ -148,7 +158,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         request.append("</presence>");
 
         // TODO: verify that we really are in the room
-        this.entered = true;
+        this.state = dojox.xmpp.muc.roomState.ENTERING;
         this.nick = nick;
 
         var def = this.session.dispatchPacket(request.toString());
@@ -156,7 +166,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
     },
     
     exit: function(status){
-        if(!this.entered){
+        if(this.state === dojox.xmpp.muc.roomState.NONE){
             return;
         }
 
@@ -170,16 +180,129 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         }
         request.append("</presence>");
 
-        this.entered = false;
+        this.state = dojox.xmpp.muc.roomState.EXITING;
 
         var def = this.session.dispatchPacket(request.toString());
         return def;
     },
     
-    changeNick: function(){},
+    changeNick: function(newNick){
+        var request = new dojox.string.Builder(dojox.xmpp.util.createElement("presence", {
+            from: dojox.xmpp.util.encodeJid(this.session.fullJid()),
+            to: dojox.xmpp.util.encodeJid(this.bareJid + "/" + newNick)
+        }, true));
+
+        var def = this.session.dispatchPacket(request.toString());
+        return def;
+    },
+
     sendMessage: function(){},
     changeSubject: function(){},
-    invite: function(){}
+    invite: function(){},
+
+    getOccupants: function(){
+        return this._occupants;
+    },
+
+    _addOccupant: function(nick, item){
+        var oldItem = this._occupants[nick];
+        if(!oldItem){
+            this._occupants[nick] = item;
+            this.onNewOccupant(item);
+        }else{
+            this._occupants[nick] = item;
+            this.onOccupantUpdate(oldItem, item);
+        }
+    },
+
+    _removeOccupant: function(nick){
+        var item = this._occupants[nick];
+        if(item){
+            delete this._occupants[nick];
+            this.onOccupantLeft(item);
+        }
+    },
+
+    onNewOccupant: function(){},
+    onOccupantUpdate: function(){},
+    onOccupantLeft: function(){},
+
+    _updateNick: function(oldNick, newNick){
+        var item = this._occupants[oldNick]
+        if(item){
+            delete this._occupants[oldNick];
+            this._occupants[newNick] = item;
+        }
+    },
+
+    handlePresence: function(msg){
+        var from = msg.getAttribute("from");
+        var fromNick = dojox.xmpp.util.getResourceFromJid(from);
+        var type = msg.getAttribute("type");
+        var state = this.state;
+        var xNodeQuery = 'x[xmlns="' + dojox.xmpp.muc.USER_NS + '"]'
+        var itemNode = dojo.query(xNodeQuery + " item", msg)[0];
+
+        var handleNickPresence = dojo.hitch(this, function(nick){
+            if(type === null){
+                var item = {
+                    nick: nick,
+                    roomJid: this.bareJid + "/" + nick,
+                    jid: itemNode.getAttribute("jid"),
+                    affiliation: itemNode.getAttribute("affiliation"),
+                    role: itemNode.getAttribute("role")
+                }
+                this._addOccupant(nick, item);
+            }else if(type === "unavailable"){
+                var statusNode = dojo.query(xNodeQuery + " status", msg)[0];
+                // nickname change only
+                if(statusNode && statusNode.getAttribute("code") === "303"){
+                    var newNick = itemNode.getAttribute("nick");
+                    this._updateNick(nick, newNick);
+                    if(nick === this.nick){
+                        this.nick = newNick;
+                    }
+                }else{ // occupant left the room for good
+                    this._removeOccupant(nick);
+                }
+            }
+        });
+
+        switch(state){
+        case dojox.xmpp.muc.roomState.NONE:
+            // nothing to do here
+            break;
+        case dojox.xmpp.muc.roomState.ENTERING:
+            if(fromNick === "" && type === "error"){
+                this.state = dojox.xmpp.muc.roomState.NONE;
+                this.session.processXmppError(msg);
+            }else if(fromNick !== ""){
+                handleNickPresence(fromNick);
+            }
+            if(fromNick === this.nick){
+                if(type !== "unavailable"){
+                    this.state = dojox.xmpp.muc.roomState.ENTERED;
+                }else{
+                    this.state = dojox.xmpp.muc.roomState.NONE;
+                }
+            }
+            break;
+        case dojox.xmpp.muc.roomState.ENTERED:
+            if(fromNick !== ""){
+                handleNickPresence(fromNick);
+            }
+            if(fromNick === this.nick && type === "unavailable"){
+                this.state = dojox.xmpp.muc.roomState.NONE;
+            }
+            break;
+        case dojox.xmpp.muc.roomState.EXITING:
+            if(fromNick === this.nick && type === "unavailable"){
+                this._removeOccupant(this.nick);
+                this.state = dojox.xmpp.muc.roomState.NONE;
+            }
+            break;
+        }
+    }
 });
 
 dojo.declare("dojox.xmpp.MucService", null, {
@@ -252,5 +375,9 @@ dojo.declare("dojox.xmpp.MucService", null, {
 
     handlePresence: function(msg){
         console.log("handlePresence called", msg);
+        var from = msg.getAttribute("from");
+        var roomId = dojox.xmpp.util.getNodeFromJid(from);
+        var room = this.getRoom(roomId);
+        room.handlePresence(msg);
     }
 });
