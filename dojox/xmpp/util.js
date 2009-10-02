@@ -10,8 +10,9 @@ dojox.xmpp.util.xmlEncode = function(str) {
 }
 
 dojox.xmpp.util.encodeJid = function(jid) {
+		var nodeLength = jid.indexOf("@");
 		var buffer = new dojox.string.Builder();
-		for(var i =0; i < jid.length; i++) {
+		for(var i =0; i < nodeLength; i++) {
 			var ch = jid.charAt(i);
 			var rep = ch;
 			switch(ch){
@@ -20,12 +21,6 @@ dojox.xmpp.util.encodeJid = function(jid) {
 				break;
 				case '"' :
 					rep = "\\22"; 
-				break;
-				case '#' :
-					rep = "\\23"; 
-				break;
-				case '&' :
-					rep = "\\26"; 
 				break;
 				case "'" :
 					rep = "\\27"; 
@@ -41,23 +36,31 @@ dojox.xmpp.util.encodeJid = function(jid) {
 				break;
 				case '>' :
 					rep = "\\3e"; 
-				break;			
+				break;
+				// this case is actually useless, but we include it for the sake
+				// of completeness
+				case '@' :
+					rep = "\\40";
+				break;
+				case '\\' :
+					rep = "\\5c";
+				break;
 			}
 			buffer.append(rep);
 		}
+		buffer.append(jid.substring(nodeLength, jid.length));
 		return buffer.toString();
 	}
 
 dojox.xmpp.util.decodeJid = function(jid) {
-	
-	jid = jid.replace(/\\([23][02367acef])/g, function(match) {
+	var nodeLength = jid.indexOf("@");
+	var node = jid.substring(0, nodeLength);
+	node = node.replace(/\\([23][02367acef])/g, function(match) {
 			switch(match){
 				case "\\20" : 
 					return  ' ';
 				case "\\22"  :
 					return '"'; 
-				case "\\23" :
-					return '#' ; 
 				case "\\26" :
 					return  '&'; 
 				case "\\27" :
@@ -69,12 +72,16 @@ dojox.xmpp.util.decodeJid = function(jid) {
 				case "\\3c" :
 					return  '<'; 
 				case "\\3e" :
-					return  '>'; 
+					return  '>';
+				case "\\40" :
+					return '@' ;
+				case "\\5c" :
+					return '\\' ;
 			}
 			return "ARG";
 	});
 	
-	return jid;
+	return node + jid.substring(nodeLength, jid.length);
 }
 
 
