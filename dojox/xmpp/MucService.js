@@ -196,7 +196,34 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         return def;
     },
 
-    sendMessage: function(){},
+    sendMessage: function(msg, toNick){
+        if(!msg.body){
+            return;
+        }
+        
+        var req = {
+			to: toNick ? this.bareJid + "/" + toNick : this.bareJid,
+			from: this.session.fullJid(),
+			type: toNick ? "chat" : "groupchat"
+		}
+
+        // for now we do what ChatService.js does and punt on handling xhtml-im
+		var message = new dojox.string.Builder(dojox.xmpp.util.createElement("message",req,false));
+
+        var html = dojox.xmpp.util.createElement("html", { "xmlns":dojox.xmpp.xmpp.XHTML_IM_NS},false)
+		var bodyTag = dojox.xmpp.util.createElement("body", {"xml:lang":this.session.lang, "xmlns":dojox.xmpp.xmpp.XHTML_BODY_NS}, false) + msg.body + "</body>";
+		var bodyPlainTag = dojox.xmpp.util.createElement("body", {}, false) + dojox.xmpp.util.stripHtml(msg.body) + "</body>";
+
+        message.append(bodyPlainTag);
+		message.append(html);
+		message.append(bodyTag);
+		message.append("</html>");
+
+        message.append("</message>");
+
+        this.session.dispatchPacket(message.toString());
+    },
+    
     changeSubject: function(){},
     invite: function(){},
 
@@ -233,6 +260,44 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             delete this._occupants[oldNick];
             this._occupants[newNick] = item;
         }
+    },
+
+    onNewMessage: function(){},
+
+    handleMessage: function(msg){
+        // copied from xmppSession.js
+        var message = {
+			from: msg.getAttribute('from'),
+			to: msg.getAttribute('to')
+		}
+        for (var i=0; i<msg.childNodes.length; i++){
+			var n = msg.childNodes[i];
+			if (n.hasChildNodes()){
+				//console.log("chat child node ", n);
+				switch(n.nodeName){
+				case 'thread':
+					message.chatid = n.firstChild.nodeValue;
+					break;
+				case 'body':
+					if (!n.getAttribute('xmlns') || (n.getAttribute('xmlns')=="")){
+						message.body = n.firstChild.nodeValue;
+					}
+					break;
+				case 'subject':
+					message.subject = n.firstChild.nodeValue;
+				case 'html':
+					if (n.getAttribute('xmlns')==dojox.xmpp.xmpp.XHTML_IM_NS){
+						message.xhtml = n.getElementsByTagName("body")[0];
+					}
+					break;
+				case 'x':
+					break;
+				default:
+					//console.log("xmppSession::chatHandler() Unknown node type: ",n.nodeName);
+				}
+			}
+		}
+        this.onNewMessage(message);
     },
 
     handlePresence: function(msg){
@@ -371,6 +436,10 @@ dojo.declare("dojox.xmpp.MucService", null, {
 
     handleMessage: function(msg){
         console.log("handleMessage called", msg);
+        var from = msg.getAttribute("from");
+        var roomId = dojox.xmpp.util.getNodeFromJid(from);
+        var room = this.getRoom(roomId);
+        room.handleMessage(msg);
     },
 
     handlePresence: function(msg){
