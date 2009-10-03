@@ -27,6 +27,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         this.mucService = mucService;
         this.session = mucService.session;
         this._occupants = {};
+        this.subject = null;
     },
 
     roomJid: function(){
@@ -224,8 +225,46 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         this.session.dispatchPacket(message.toString());
     },
     
-    changeSubject: function(){},
-    invite: function(){},
+    changeSubject: function(string){
+        var req = {
+            to: this.bareJid,
+            from: this.session.fullJid(),
+            type: "groupchat"
+        }
+
+        var message = new dojox.string.Builder(dojox.xmpp.util.createElement("message", req, false));
+        message.append("<subject>" + string + "</subject>");
+        message.append("</message>");
+
+        this.session.dispatchPacket(message.toString());
+    },
+
+    onNewSubject: function(){},
+
+    invite: function(to, reason){
+        var message = new dojox.string.Builder(dojox.xmpp.util.createElement("message", {
+            to: this.bareJid,
+            from: this.session.fullJid()
+        }, false));
+
+        var x = new dojox.string.Builder(dojox.xmpp.util.createElement("x", {
+            xmlns: dojox.xmpp.muc.USER_NS
+        }, false));
+
+        var inviteTag = new dojox.string.Builder(dojox.xmpp.util.createElement("invite", {
+            to: to
+        }, false));
+        inviteTag.append("<reason>" + reason + "</reason>");
+        inviteTag.append("</invite>");
+
+        x.append(inviteTag);
+        x.append("</x>");
+
+        message.append(x);
+        message.append("</message>");
+
+        this.session.dispatchPacket(message.toString());
+    },
 
     getOccupants: function(){
         return this._occupants;
@@ -265,6 +304,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
     onNewMessage: function(){},
 
     handleMessage: function(msg){
+        var type = msg.getAttribute("type");
         // copied from xmppSession.js
         var message = {
 			from: msg.getAttribute('from'),
@@ -297,7 +337,18 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
 				}
 			}
 		}
-        this.onNewMessage(message);
+        var nodeOfInterest;
+        if(nodeOfInterest = dojo.query("subject", msg)[0]){
+            var subject = nodeOfInterest.textContent;
+            this.subject = subject ? subject : null;
+            this.onNewSubject(this.subject);
+        }else if(nodeOfInterest = dojo.query('x[xmlns="' + dojox.xmpp.muc.USER_NS + '"] invite', msg)[0]){
+            var inviteFrom = nodeOfInterest.getAttribute("from");
+            var reason = dojo.query("reason", nodeOfInterest)[0].textContent;
+            this.mucService.onInviteReceived(this.bareJid, inviteFrom, reason);
+        }else if(type === "chat" || type === "groupchat"){
+            this.onNewMessage(message);
+        }
     },
 
     handlePresence: function(msg){
@@ -433,6 +484,8 @@ dojo.declare("dojox.xmpp.MucService", null, {
         }
         return room;
     },
+
+    onInviteReceived: function(){},
 
     handleMessage: function(msg){
         console.log("handleMessage called", msg);
