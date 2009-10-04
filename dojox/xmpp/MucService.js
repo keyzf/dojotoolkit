@@ -66,9 +66,6 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         return def;
     },
 
-    onRoomInfoReceived: function(){},
-    onRoomInfoReceiveFailed: function(){},
-
     _extractRoomInfo: function(queryNode){
         var identityNode = dojo.query("identity", queryNode)[0];
         var featureNodes = dojo.query("feature", queryNode);
@@ -239,8 +236,6 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         this.session.dispatchPacket(message.toString());
     },
 
-    onNewSubject: function(){},
-
     invite: function(to, reason){
         var message = new dojox.string.Builder(dojox.xmpp.util.createElement("message", {
             to: this.bareJid,
@@ -289,10 +284,6 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         }
     },
 
-    onNewOccupant: function(){},
-    onOccupantUpdate: function(){},
-    onOccupantLeft: function(){},
-
     _updateNick: function(oldNick, newNick){
         var item = this._occupants[oldNick]
         if(item){
@@ -300,8 +291,6 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             this._occupants[newNick] = item;
         }
     },
-
-    onNewMessage: function(){},
 
     handleMessage: function(msg){
         var type = msg.getAttribute("type");
@@ -418,7 +407,23 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             }
             break;
         }
-    }
+    },
+
+    // Events
+    
+    onRoomInfoReceived: function(){},
+    
+    onRoomInfoReceiveFailed: function(err){},
+
+    onNewSubject: function(subject){},
+
+    onNewOccupant: function(item){},
+    
+    onOccupantUpdate: function(oldItem, newItem){},
+    
+    onOccupantLeft: function(item){},
+
+    onNewMessage: function(message){}
 });
 
 dojo.declare("dojox.xmpp.MucService", null, {
@@ -469,9 +474,6 @@ dojo.declare("dojox.xmpp.MucService", null, {
         return def;
     },
 
-    onRoomListReceived: function(){},
-    onRoomListReceiveFailed: function(){},
-
     getRoom: function(roomId){
         var room = this.rooms[roomId];
         if(!room){
@@ -484,8 +486,6 @@ dojo.declare("dojox.xmpp.MucService", null, {
         }
         return room;
     },
-
-    onInviteReceived: function(){},
 
     handleMessage: function(msg){
         console.log("handleMessage called", msg);
@@ -501,5 +501,13 @@ dojo.declare("dojox.xmpp.MucService", null, {
         var roomId = dojox.xmpp.util.getNodeFromJid(from);
         var room = this.getRoom(roomId);
         room.handlePresence(msg);
-    }
+    },
+
+    // Events
+
+    onRoomListReceived: function(rooms){},
+    
+    onRoomListReceiveFailed: function(err){},
+
+    onInviteReceived: function(roomJid, from, reason){}
 });
