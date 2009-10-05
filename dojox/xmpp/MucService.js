@@ -12,11 +12,15 @@ dojox.xmpp.muc = {
 
 dojo.declare("dojox.xmpp.muc.Room", null, {
     constructor: function(jid, mucService){
-        this.jid = jid;
+        this.bareJid = jid;
         this.roomId = dojox.xmpp.util.getNodeFromJid(jid);
         this.domain = dojox.xmpp.util.getDomainFromJid(jid);
         this.mucService = mucService;
         this.session = mucService.session;
+    },
+
+    roomJid: function(){
+        return this.bareJid + "/" + this.nick;
     },
     
     getInfo: function(){
@@ -24,12 +28,11 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             throw new Error("No session associated with room.");
         }
         
-        var roomId = this.roomId;
         var iqId = this.session.getNextIqId();
         var req = {
             id: iqId,
-            from: this.session.jid + "/" + this.session.resource,
-            to: roomId + "@" + this.domain,
+            from: dojox.xmpp.util.encodeJid(this.session.fullJid()),
+            to: dojox.xmpp.util.encodeJid(this.bareJid),
             type: "get"
         }
 
@@ -117,35 +120,62 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         if(this.entered){
             return;
         }
-        
+
+        // first do a feature check on the room before entering
         if(!this.features){
+            var retval;
             var connectHandle = dojo.connect(this, "onRoomInfoReceived", this, function(){
-                this.enter(nick, password);
+                retval = this.enter(nick, password);
                 dojo.disconnect(connectHandle);
             });
             this.getInfo();
+            return retval;
         }
 
-        // feature check
+        // password required?
         if(this.features.passwordProtected && !password){
             throw new Error("Can't enter room -- need password.");
         }
 
         // Build the <presence> packet to send
         var request = new dojox.string.Builder(dojox.xmpp.util.createElement("presence", {
-            from: this.session.jid + "/" + this.session.resource,
-            to: this.jid + "/" + nick
+            from: dojox.xmpp.util.encodeJid(this.session.fullJid()),
+            to: dojox.xmpp.util.encodeJid(this.bareJid + "/" + nick)
         }, false));
         request.append(dojox.xmpp.util.createElement("x", {
             xmlns: dojox.xmpp.muc.NS
         }, true));
         request.append("</presence>");
 
+        // TODO: verify that we really are in the room
+        this.entered = true;
+        this.nick = nick;
+
         var def = this.session.dispatchPacket(request.toString());
         return def;
     },
     
-    exit: function(){},
+    exit: function(status){
+        if(!this.entered){
+            return;
+        }
+
+        var request = new dojox.string.Builder(dojox.xmpp.util.createElement("presence", {
+            from: dojox.xmpp.util.encodeJid(this.session.fullJid()),
+            to: dojox.xmpp.util.encodeJid(this.roomJid()),
+            type: "unavailable"
+        }, false));
+        if(status){
+            request.append("<status>" + status + "</status>");
+        }
+        request.append("</presence>");
+
+        this.entered = false;
+
+        var def = this.session.dispatchPacket(request.toString());
+        return def;
+    },
+    
     changeNick: function(){},
     sendMessage: function(){},
     changeSubject: function(){},
@@ -168,7 +198,7 @@ dojo.declare("dojox.xmpp.MucService", null, {
         var iqId = this.session.getNextIqId();
         var req = {
             id: iqId,
-            from: this.session.jid + "/" + this.session.resource,
+            from: dojox.xmpp.util.encodeJid(this.session.fullJid()),
             to: this.domain,
             type: "get"
         }
