@@ -150,9 +150,16 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             from: dojox.xmpp.util.encodeJid(this.session.fullJid()),
             to: dojox.xmpp.util.encodeJid(this.bareJid + "/" + nick)
         }, false));
-        request.append(dojox.xmpp.util.createElement("x", {
+
+        var x = new dojox.string.Builder(dojox.xmpp.util.createElement("x", {
             xmlns: dojox.xmpp.muc.NS
-        }, true));
+        }, false));
+        if(password){
+            x.append("<password>" + password + "</password>");
+        }
+        x.append("</x>");
+
+        request.append(x);
         request.append("</presence>");
 
         // TODO: verify that we really are in the room
@@ -486,11 +493,11 @@ dojo.declare("dojox.xmpp.MucService", null, {
         return room;
     },
 
-    enterRoom: function(room, nick){
+    enterRoom: function(room, nick, password){
         if(typeof room === "string"){
             room = this.getRoom(room);
         }
-        room.enter(nick);
+        room.enter(nick, password);
         return room;
     },
 
