@@ -886,6 +886,10 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				return jid.substring((i + 1), jid.length);
 			}
 			return "";
+		},
+
+		fullJid: function(){
+			return this.jid + "/" + this.resource;
 		}
 
 });
