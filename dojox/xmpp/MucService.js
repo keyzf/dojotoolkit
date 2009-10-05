@@ -482,8 +482,15 @@ dojo.declare("dojox.xmpp.MucService", null, {
                 this.rooms[roomId] = room;
                 dojo.disconnect(connectHandle);
             });
-            room.getInfo();
         }
+        return room;
+    },
+
+    enterRoom: function(room, nick){
+        if(typeof room === "string"){
+            room = this.getRoom(room);
+        }
+        room.enter(nick);
         return room;
     },
 
