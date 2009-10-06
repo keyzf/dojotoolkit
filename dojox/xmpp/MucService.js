@@ -36,7 +36,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
     
     getInfo: function(){
         if(!this.session){
-            throw new Error("No session associated with room.");
+            throw new Error("MucService::Room::getInfo() No session associated with room.");
         }
         
         var iqId = this.session.getNextIqId();
@@ -142,7 +142,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
 
         // password required?
         if(this.features.passwordProtected && !password){
-            throw new Error("Can't enter room -- need password.");
+            throw new Error("MucService::Room::enter() Can't enter room -- need password.");
         }
 
         // Build the <presence> packet to send
