@@ -132,9 +132,15 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         // first do a feature check on the room before entering
         if(!this.features){
             var retval;
-            var connectHandle = dojo.connect(this, "onRoomInfoReceived", this, function(){
+            var successHandle = dojo.connect(this, "onRoomInfoReceived", this, function(){
                 retval = this.enter(nick, password);
-                dojo.disconnect(connectHandle);
+                dojo.disconnect(successHandle);
+                dojo.disconnect(failHandle);
+            });
+            var failHandle = dojo.connect(this, "onRoomInfoReceiveFailed", this, function(err){
+                this.onEnterFailed(err);
+                dojo.disconnect(successHandle);
+                dojo.disconnect(failHandle);
             });
             this.getInfo();
             return retval;
@@ -385,15 +391,18 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             // nothing to do here
             break;
         case dojox.xmpp.muc.roomState.ENTERING:
-            if(fromNick === "" && type === "error"){
+            if((fromNick === "" || fromNick === this.nick) && type === "error"){
                 this.state = dojox.xmpp.muc.roomState.NONE;
-                this.session.processXmppError(msg);
+                var err = this.session.processXmppError(msg);
+                this.onEnterFailed(err);
+                break;
             }else if(fromNick !== ""){
                 handleNickPresence(fromNick);
             }
             if(fromNick === this.nick){
                 if(type !== "unavailable"){
                     this.state = dojox.xmpp.muc.roomState.ENTERED;
+                    this.onEnter();
                 }else{
                     this.state = dojox.xmpp.muc.roomState.NONE;
                 }
@@ -411,6 +420,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             if(fromNick === this.nick && type === "unavailable"){
                 this._removeOccupant(this.nick);
                 this.state = dojox.xmpp.muc.roomState.NONE;
+                this.onExit();
             }
             break;
         }
@@ -421,6 +431,12 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
     onRoomInfoReceived: function(){},
     
     onRoomInfoReceiveFailed: function(err){},
+
+    onEnter: function(){},
+
+    onEnterFailed: function(err){},
+
+    onExit: function(){},
 
     onNewSubject: function(subject){},
 
@@ -442,6 +458,18 @@ dojo.declare("dojox.xmpp.MucService", null, {
     
     setSession: function(session){
         this.session = session;
+    },
+
+    _addListeners: function(room){
+        dojo.connect(room, "onEnter", this, function(){
+            this.onEnter(room);
+        });
+        dojo.connect(room, "onEnterFailed", this, function(err){
+            this.onEnterFailed(room, err);
+        });
+        dojo.connect(room, "onExit", this, function(){
+            this.onExit(room);
+        });
     },
 
     // TODO: Handle result <set>
@@ -469,6 +497,7 @@ dojo.declare("dojox.xmpp.MucService", null, {
                     if (!this.rooms[roomId]){
                         var room = new dojox.xmpp.muc.Room(jid, this);
                         this.rooms[roomId] = room;
+                        this._addListeners(room);
                     }
                 }
                 this.onRoomListReceived(this.rooms);
@@ -484,7 +513,8 @@ dojo.declare("dojox.xmpp.MucService", null, {
     getRoom: function(roomId){
         var room = this.rooms[roomId];
         if(!room){
-            room = new dojox.xmpp.muc.Room(roomId + "@" + this.domain, this);
+            var room = new dojox.xmpp.muc.Room(roomId + "@" + this.domain, this);
+            this._addListeners(room);
             var connectHandle = dojo.connect(room, "onRoomInfoReceived", this, function(){
                 this.rooms[roomId] = room;
                 dojo.disconnect(connectHandle);
@@ -523,5 +553,11 @@ dojo.declare("dojox.xmpp.MucService", null, {
     
     onRoomListReceiveFailed: function(err){},
 
-    onInviteReceived: function(roomJid, from, reason){}
+    onInviteReceived: function(roomJid, from, reason){},
+
+    onEnter: function(room){},
+
+    onEnterFailed: function(room, err){},
+
+    onExit: function(room){}
 });
