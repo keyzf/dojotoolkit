@@ -125,6 +125,10 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
     },
 
     enter: function(nick, password){
+        if(!nick){
+            throw new Error("MucService::Room::enter() nick is null or undefined");
+        }
+
         if(this.state === dojox.xmpp.muc.roomState.ENTERED){
             return;
         }
@@ -198,6 +202,9 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
     },
     
     changeNick: function(newNick){
+        if(!newNick){
+            throw new Error("MucService::Room::changeNick() newNick is null or undefined");
+        }
         var request = new dojox.string.Builder(dojox.xmpp.util.createElement("presence", {
             from: dojox.xmpp.util.encodeJid(this.session.fullJid()),
             to: dojox.xmpp.util.encodeJid(this.bareJid + "/" + newNick)
@@ -208,8 +215,8 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
     },
 
     sendMessage: function(msg, toNick){
-        if(!msg.body){
-            return;
+        if(!msg || !msg.body){
+            throw new Error("MucService::Room::sendMessage() msg or msg.body is null or undefined");
         }
         
         var req = {
@@ -236,6 +243,9 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
     },
     
     changeSubject: function(string){
+        if(!string){
+            throw new Error("MucService::Room::changeSubject() string is null or undefined");
+        }
         var req = {
             to: this.bareJid,
             from: this.session.fullJid(),
@@ -250,6 +260,10 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
     },
 
     invite: function(to, reason){
+        if(!to){
+            throw new Error("MucService::Room::invite() to is null or undefined");
+        }
+
         var message = new dojox.string.Builder(dojox.xmpp.util.createElement("message", {
             to: this.bareJid,
             from: this.session.fullJid()
@@ -511,6 +525,9 @@ dojo.declare("dojox.xmpp.MucService", null, {
     },
 
     getRoom: function(roomId){
+        if(!roomId){
+            throw new Error("MucService::getRoom() roomId is null or undefined");
+        }
         var room = this.rooms[roomId];
         if(!room){
             var room = new dojox.xmpp.muc.Room(roomId + "@" + this.domain, this);
@@ -524,6 +541,9 @@ dojo.declare("dojox.xmpp.MucService", null, {
     },
 
     enterRoom: function(room, nick, password){
+        if(!room){
+            throw new Error("MucService::enterRoom() room is null or undefined");
+        }
         if(typeof room === "string"){
             room = this.getRoom(room);
         }
