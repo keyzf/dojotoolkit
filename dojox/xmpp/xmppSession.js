@@ -1,6 +1,7 @@
 dojo.provide("dojox.xmpp.xmppSession");
 
-dojo.require("dojox.xmpp.TransportSession");
+//dojo.require("dojox.xmpp.TransportSession");
+dojo.require("dojox.xmpp.transportManager");
 dojo.require("dojox.xmpp.RosterService");
 dojo.require("dojox.xmpp.PresenceService");
 dojo.require("dojox.xmpp.UserService");
@@ -61,8 +62,8 @@ dojox.xmpp.xmppSession = function(props){
 		dojo.mixin(this, props);
 	}
 
-	this.session = new dojox.xmpp.TransportSession(props); 
-	dojo.connect(this.session, "onReady", this, "onTransportReady");
+	this.session = dojox.xmpp.transportManager.getTransport(props); 
+	dojo.connect(this.session, "onStreamReady", this, "onTransportReady");
 	dojo.connect(this.session, "onTerminate", this, "onTransportTerminate");
 	dojo.connect(this.session, "onProcessProtocolResponse", this, "processProtocolResponse");
 };
@@ -101,7 +102,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		close: function(){
 			this.state = dojox.xmpp.xmpp.TERMINATE;
-			this.session.close(dojox.xmpp.util.createElement("presence",{type:"unavailable",xmlns:dojox.xmpp.xmpp.CLIENT_NS},true));	
+			this.session.close("unavailable");	
 		},
 
 		processProtocolResponse: function(msg){
@@ -243,12 +244,13 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 			if(msg.hasChildNodes()){
 				this.onLoginFailure(msg.firstChild.nodeName);
-				this.session.setState('Terminate', msg.firstChild.nodeName);
+				// TODO: Fix this - Rakesh
+				//this.session.setState('Terminate', msg.firstChild.nodeName);
 			}
 		},
 
 		sendRestart: function(){
-			this.session._sendRestart();
+			this.session.restartStream();
 		},
 
 
@@ -676,7 +678,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			request.append("</").append(searchAttribute).append(">");
 			request.append("</query></iq>");
 
-			var def = this.dispatchPacket(request.toString,"iq",req.id);
+			var def = this.dispatchPacket(request,"iq",req.id);
 			def.addCallback(this, "_onSearchResults");
 		},
 
