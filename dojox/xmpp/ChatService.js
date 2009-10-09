@@ -102,9 +102,12 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 		message.append(html);
 		message.append(bodyTag);
 		message.append("</html>");
-		message.append(dojox.xmpp.util.createElement("thread", {}, false));
-		message.append(this.chatid);
-		message.append("</thread>");
+
+		if(this.chatid){
+			message.append(dojox.xmpp.util.createElement("thread", {}, false));
+			message.append(this.chatid);
+			message.append("</thread>");
+		}
 
 		if (this.useChatState){
 			message.append(dojox.xmpp.util.createElement("active",{xmlns: dojox.xmpp.chat.CHAT_STATE_NS},true));
