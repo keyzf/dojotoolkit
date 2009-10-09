@@ -15,9 +15,13 @@ dojox.xmpp.transportManager = new function() {
 			if(!config || !dojo.isObject(config)) {
 				throw new Error("Need a configuration object to decide what transport to use and to instantiate it.")
 			}
+			
+			console.log(config);
+			
 			try {
 				transport = new (adapterRegistry.match(config))(config);
 			} catch(e) {
+				console.log(e);
 				throw new Error("No suitable transport found.");
 			}
 		}
@@ -27,3 +31,5 @@ dojox.xmpp.transportManager = new function() {
 };
 
 dojo.require("dojox.xmpp.transportProviders.Titanium");
+dojo.require("dojox.xmpp.transportProviders.BoshXhr");
+dojo.require("dojox.xmpp.transportProviders.BoshScriptTag");

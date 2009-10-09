@@ -18,21 +18,25 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
         this.socket = Titanium.Network.createTCPSocket(this.server, this.port);
         this.socket.onRead(dojo.hitch(this._streamReader, "parse"));
         
-        /*this.socket.onTimeout(dojo.hitch(this, function() {
-            this.log( "Socket Timeout." );
-            this.endSession();
-        }));*/
+		if(this.socket.onTimeout) {
+            this.socket.onTimeout(dojo.hitch(this, function() {
+                this.log( "Socket Timeout." );
+                this.endSession();
+            }));
+		}
         
         this.isErrorCall = true;
-        /*
-        this.socket.onError(dojo.hitch(this, function() {
-            if(this.isErrorCall){
-                this.isErrorCall = false;
-                this.log( "Socket Error" );
-                this.onSocketError();
-            }
-        }));
-        */
+        
+		if(this.socket.onError) {
+            this.socket.onError(dojo.hitch(this, function() {
+                if(this.isErrorCall){
+                    this.isErrorCall = false;
+                    this.log( "Socket Error" );
+                    this.onSocketError();
+                }
+            }));
+		}
+        
         if(this.socket.connect()) {
             console.log("Socket successfully connected: domain =" + this.domain + ", server =" + this.server + ", port =" + this.port );
             this.restartStream();
