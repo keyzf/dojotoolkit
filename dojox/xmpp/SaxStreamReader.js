@@ -20,7 +20,7 @@ dojo.declare("dojox.xmpp.SaxStreamReader", null, {
     _startElementHandler: function(nodeName, attributes) {
         this._saxDepth++;
         if (this._saxDepth > 1) {
-			this._saxBuffer.append("<", nodeName, attributes, ">");
+			this._saxBuffer.append("<", nodeName, " ", attributes, ">");
 		} else if (this._saxDepth == 1) {
 			console.info("RECD: <" + nodeName + attributes + ">");
 			this.onSessionStart();
@@ -65,7 +65,7 @@ dojo.declare("dojox.xmpp.SaxStreamReader", null, {
 		}
 		
         this._saxParser = new dojox.xml.SaxParser();
-        this._saxBuffer = this._saxBuffer?this._saxBuffer.clear():new dojox.string.Builder();
+        this._saxBuffer = this._saxBuffer?this._saxBuffer.clear():new dojox.string.Builder(true);
 		this._saxDepth = 0;
 		
         this._startElementConnectHandle = dojo.connect(this._saxParser, "onStartElement", this, "_startElementHandler");
