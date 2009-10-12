@@ -189,9 +189,7 @@ dojo.declare("dojox.xmpp.transportProviders._base.BoshTransportProvider", dojox.
 	
 	_processProtocolPacketQueue: function(){
 		var packets = new dojox.string.Builder();
-		for (var i = 0; i < this._protocolPacketQueue.length; i++) {
-			packets.append(this._protocolPacketQueue[i]);
-		}
+		packets.append.apply(this, this._protocolPacketQueue);
 		this._protocolPacketQueue = [];
 		return packets.toString();
 	},
