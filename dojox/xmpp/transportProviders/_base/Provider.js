@@ -20,7 +20,7 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
     _deferredRequests: {},
     _matchTypeIdAttribute: {},
 	
-	keepaliveTimer: 3000,
+	keepaliveTimer: 30000,
 	
     constructor: function(config) {
         // The following 3 lines really belong in dojox.xmpp.transportProviders.Provider

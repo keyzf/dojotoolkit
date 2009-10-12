@@ -13,8 +13,24 @@ dojo.declare("dojox.xml.SaxParser", null, {
 	_cdataRunning: false,
 	_cdataBuffer: "",
 	
-    constructor: function(){
+    constructor: function(dontUnescapeEntities){
         this.cname = [];
+		if (dontUnescapeEntities) {
+			this.unescapeEntities = function(stringData){
+				return stringData;
+			}
+		} else {
+			this.unescapeEntities = function(stringData){
+				// This should be replaced with a good regex
+				
+				stringData = stringData.split("&lt;").join("<");
+				stringData = stringData.split("&gt;").join(">");
+				stringData = stringData.split("&quot;").join("\"");
+				stringData = stringData.split("&apos;").join("\'");
+				stringData = stringData.split("&amp;").join("&");
+				return stringData;
+			}
+		}
     },
 	
 	// The following functions are the ones external scripts can dojo.connect to to get notifications when parsing is happening.
@@ -110,9 +126,7 @@ dojo.declare("dojox.xml.SaxParser", null, {
                 if (nextspace != -1) {
                     name = starttag.substring(0, nextspace);
                     
-                    //        edit by cbas: no need to skip the whitespace as we are passing it on to the startElement handler
-                    //        attribs = starttag.substring(nextspace + 1,starttag.length);
-                    attribs = starttag.substring(nextspace, starttag.length);
+                    attribs = starttag.substring(nextspace + 1, starttag.length);
                 } else {
                     name = starttag;
                 }
@@ -134,10 +148,10 @@ dojo.declare("dojox.xml.SaxParser", null, {
             
             // leftovers are cdata
             if (estart == -1) {
-                this.onCdataCharacters(this.entityCheck(this._buffer));
+                this.onCdataCharacters(this.unescapeEntities(this._buffer));
                 this._buffer = "";
             } else {
-                this.onCdataCharacters(this.entityCheck(this._buffer.substring(0, estart)));
+                this.onCdataCharacters(this.unescapeEntities(this._buffer.substring(0, estart)));
                 this._buffer = this._buffer.substring(estart, this._buffer.length);
             }
         }
@@ -216,45 +230,11 @@ dojo.declare("dojox.xml.SaxParser", null, {
             ws = key.split("\t");
             key = ws.join("");
             
-            attribs[key] = this.entityCheck(val);
+            attribs[key] = this.unescapeEntities(val);
             aStr = aStr.substring(nextid + 1, aStr.length);
         }
         
         return attribs;
         */
     },
-    
-    /**
-     * entityCheck(aStr)
-     *
-     * Internal function used to replace entitys with there character
-     * equivalent.
-     *
-     * Returns the modified string.
-     *
-     */
-    entityCheck: function(aStr){
-		// This should be replaced with a good regex
-		
-		aStr = aStr.split("&lt;").join("<");
-		aStr = aStr.split("&gt;").join(">");
-		aStr = aStr.split("&quot;").join("\"");
-		aStr = aStr.split("&apos;").join("\'");
-		aStr = aStr.split("&amp;").join("&");
-		/*
-        var A = [];
-        
-        A = aStr.split("&lt;");
-        aStr = A.join("<");
-        A = aStr.split("&gt;");
-        aStr = A.join(">");
-        A = aStr.split("&quot;");
-        aStr = A.join("\"");
-        A = aStr.split("&apos;");
-        aStr = A.join("\'");
-        A = aStr.split("&amp;");
-        aStr = A.join("&");
-        */
-        return aStr;
-    }
 });
