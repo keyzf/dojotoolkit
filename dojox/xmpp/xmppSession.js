@@ -24,6 +24,8 @@ dojox.xmpp.xmpp = {
 	DISCO_INFO_NS: "http://jabber.org/protocol/disco#info",
 	DISCO_ITEMS_NS: "http://jabber.org/protocol/disco#items",
 
+	RSM_NS: "http://jabber.org/protocol/rsm",
+
 	INACTIVE: "Inactive",
 	CONNECTED: "Connected",
 	ACTIVE: "Active",
