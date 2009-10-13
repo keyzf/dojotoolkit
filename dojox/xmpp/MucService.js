@@ -486,8 +486,8 @@ dojo.declare("dojox.xmpp.MucService", null, {
         });
     },
 
-    // TODO: Handle result <set>
-    getRoomList: function(){
+    _getRoomList: function(setInfo, result){
+        var self = this;
         var iqId = this.session.getNextIqId();
         var req = {
             id: iqId,
@@ -497,7 +497,16 @@ dojo.declare("dojox.xmpp.MucService", null, {
         }
 
         var request = new dojox.string.Builder(dojox.xmpp.util.createElement("iq", req, false));
-        request.append(dojox.xmpp.util.createElement("query", {xmlns: dojox.xmpp.xmpp.DISCO_ITEMS_NS}, true));
+        request.append(dojox.xmpp.util.createElement("query", {xmlns: dojox.xmpp.xmpp.DISCO_ITEMS_NS}, false));
+        if(setInfo){
+            var setElement = new dojox.string.Builder(dojox.xmpp.util.createElement("set", {xmlns: dojox.xmpp.xmpp.RSM_NS}, false));
+            if(setInfo.max){ setElement.append("<max>" + setInfo.max + "</max>"); }
+            if(setInfo.before){ setElement.append("<before>" + setInfo.before + "</before>"); }
+            if(setInfo.after){ setElement.append("<after>" + setInfo.after + "</after>"); }
+            setElement.append("</set>");
+            request.append(setElement);
+        }
+        request.append("</query>");
         request.append("</iq>");
 
         var def = this.session.dispatchPacket(request.toString(), "iq", req.id);
@@ -514,14 +523,67 @@ dojo.declare("dojox.xmpp.MucService", null, {
                         this._addListeners(room);
                     }
                 }
-                this.onRoomListReceived(this.rooms);
+                result.onComplete(items);
+                // FIXME for dojo.query: why doesn't plain query with
+                // "set[xmlns=...]" work?
+                var setElement = dojo.query('query set[xmlns="' + dojox.xmpp.xmpp.RSM_NS + '"]', res)[0];
+                if(setElement){
+                    var firstIndex = parseInt(dojo.query("first", setElement)[0].getAttribute("index"));
+                    result.first = dojo.query("first", setElement)[0].textContent;
+                    result.last = dojo.query("last", setElement)[0].textContent;
+                    result.count = parseInt(dojo.query("count", setElement)[0].textContent);
+                    // set next() and previous() handlers
+                    if(firstIndex !== 0){ // first page
+                        result.previous = function(){
+                            self._getRoomList({
+                                max: result.max,
+                                before: result.first
+                            }, result);
+                        }
+                    }else{
+                        result.previous = null;
+                    }
+                    if(firstIndex + items.length !== result.count){ // last page
+                        result.next = function(){
+                            self._getRoomList({
+                                max: result.max,
+                                after: result.last
+                            }, result);
+                        }
+                    }else{
+                        result.next = null;
+                    }
+                }
             }else{
                 var err = this.session.processXmppError(res);
-                this.onRoomListReceiveFailed(err);
+                result.onError(err);
             }
         });
-        
-        return def;
+    },
+
+    getRoomList: function(onComplete, onError, max){
+        if(!onComplete){
+            throw new Error("MucService::getRoomList() onComplete is null or undefined");
+        }
+        if(!onError){
+            throw new Error("MucService::getRoomList() onError is null or undefined");
+        }
+
+        var result = {
+            previous: null,
+            next: null,
+            onComplete: onComplete,
+            onError: onError,
+            max: max
+        }
+
+        if(max){
+            this._getRoomList({ max: max }, result);
+        }else{
+            this._getRoomList(null, result);
+        }
+
+        return result;
     },
 
     getRoom: function(roomId){
