@@ -513,17 +513,20 @@ dojo.declare("dojox.xmpp.MucService", null, {
         def.addCallback(this, function(res){
             if(res.getAttribute("type") === "result"){
                 var items = dojo.query("item", res);
+                var rooms = [];
                 for(i = 0; i < items.length; ++i){
                     var item = items[i];
                     var jid = item.getAttribute("jid");
                     var roomId = dojox.xmpp.util.getNodeFromJid(jid);
-                    if (!this.rooms[roomId]){
-                        var room = new dojox.xmpp.muc.Room(jid, this);
+                    var room = this.rooms[roomId];
+                    if(!room){
+                        room = new dojox.xmpp.muc.Room(jid, this);
                         this.rooms[roomId] = room;
                         this._addListeners(room);
                     }
+                    rooms.push(room);
                 }
-                result.onComplete(items);
+                result.onComplete(rooms);
                 // FIXME for dojo.query: why doesn't plain query with
                 // "set[xmlns=...]" work?
                 var setElement = dojo.query('query set[xmlns="' + dojox.xmpp.xmpp.RSM_NS + '"]', res)[0];
