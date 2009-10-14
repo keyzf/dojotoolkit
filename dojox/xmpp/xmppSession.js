@@ -3,10 +3,6 @@ dojo.provide("dojox.xmpp.xmppSession");
 //dojo.require("dojox.xmpp.TransportSession");
 dojo.require("dojox.xmpp.transportManager");
 
-dojo.require("dojox.xmpp.transportProviders.Titanium");
-dojo.require("dojox.xmpp.transportProviders.BoshXhr");
-dojo.require("dojox.xmpp.transportProviders.BoshScriptTag");
-
 dojo.require("dojox.xmpp.RosterService");
 dojo.require("dojox.xmpp.PresenceService");
 dojo.require("dojox.xmpp.UserService");
@@ -274,9 +270,10 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				//console.log("chat child node ", msg.childNodes, msg.childNodes.length);
 			for (var i=0; i<msg.childNodes.length; i++){
 				var n = msg.childNodes[i];
+				console.log(n.nodeName);
 				if (n.hasChildNodes()){
 					//console.log("chat child node ", n);
-					switch(n.nodeName){
+					switch(n.nodeName) {
 						case 'thread':
 							message.chatid = n.firstChild.nodeValue;
 							break;
@@ -295,11 +292,10 @@ dojo.extend(dojox.xmpp.xmppSession, {
 						case 'x':
 							break;
 						default:
-							//console.log("xmppSession::chatHandler() Unknown node type: ",n.nodeName);
+							console.log("xmppSession::chatHandler() Unknown node type: ",n.nodeName);
 					}
 				}
-				//console.log("Foo", n, n.nodeName);
-				if(n.getAttribute('xmlns')==dojox.xmpp.chat.CHAT_STATE_NS){
+				if(n.getAttribute && n.getAttribute('xmlns')==dojox.xmpp.chat.CHAT_STATE_NS){
 					chatState = n.nodeName;
 				}
 			}
