@@ -39,6 +39,6 @@ dojo.declare("dojox.xmpp.transportProviders.BoshScriptTag", dojox.xmpp.transport
 	}
 });
 
-dojox.xmpp.transportManager.register("BoshScriptTag", function(props) {
+dojox.xmpp.transportProviders.BoshScriptTag.check = function(props) {
     return !window.Titanium;
-}, dojox.xmpp.transportProviders.BoshScriptTag, true);
+};

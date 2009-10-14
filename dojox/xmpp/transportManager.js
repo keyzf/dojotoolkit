@@ -1,15 +1,26 @@
 dojo.provide("dojox.xmpp.transportManager");
 
 dojo.require("dojo.AdapterRegistry");
+dojo.require("dojox.xmpp.transportProviders.Titanium");
+dojo.require("dojox.xmpp.transportProviders.BoshXhr");
+dojo.require("dojox.xmpp.transportProviders.BoshScriptTag");
 
 dojox.xmpp.transportManager = new function() {
 	var adapterRegistry = new dojo.AdapterRegistry();
 	var transport = null;
-	
+
 	this.register = function(name, check, transportClass, highPriority) {
 		adapterRegistry.register(name, check, transportClass, true, highPriority);
 	}
 	
+    dojo.forEach(["Titanium", "BoshXhr", "BoshScriptTag"], dojo.hitch(this, function(transportName) {
+        var transportClass = dojo.getObject("dojox.xmpp.transportProviders." + transportName);
+        
+        if(transportClass && transportClass.check) {
+            this.register(transportName, transportClass.check, transportClass);               
+        }
+    }));
+    
 	this.getTransport = function(config) {
 		if(!transport) {
 			if(!config || !dojo.isObject(config)) {
