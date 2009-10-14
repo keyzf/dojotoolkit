@@ -1,7 +1,6 @@
 dojo.provide("dojox.xmpp.transportProviders.BoshXhr");
 
 dojo.require("dojox.xmpp.transportProviders._base.BoshTransportProvider");
-dojo.require("dojox.xmpp.transportManager");
 
 dojo.declare("dojox.xmpp.transportProviders.BoshXhr", dojox.xmpp.transportProviders._base.BoshTransportProvider, {
 	open: function() {
