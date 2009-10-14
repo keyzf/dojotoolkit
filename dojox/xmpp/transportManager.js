@@ -29,7 +29,3 @@ dojox.xmpp.transportManager = new function() {
 		return transport;
 	}
 };
-
-dojo.require("dojox.xmpp.transportProviders.Titanium");
-dojo.require("dojox.xmpp.transportProviders.BoshXhr");
-dojo.require("dojox.xmpp.transportProviders.BoshScriptTag");

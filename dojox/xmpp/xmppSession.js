@@ -2,6 +2,11 @@ dojo.provide("dojox.xmpp.xmppSession");
 
 //dojo.require("dojox.xmpp.TransportSession");
 dojo.require("dojox.xmpp.transportManager");
+
+dojo.require("dojox.xmpp.transportProviders.Titanium");
+dojo.require("dojox.xmpp.transportProviders.BoshXhr");
+dojo.require("dojox.xmpp.transportProviders.BoshScriptTag");
+
 dojo.require("dojox.xmpp.RosterService");
 dojo.require("dojox.xmpp.PresenceService");
 dojo.require("dojox.xmpp.UserService");
