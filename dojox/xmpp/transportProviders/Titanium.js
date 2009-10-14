@@ -2,6 +2,7 @@ dojo.provide("dojox.xmpp.transportProviders.Titanium");
 
 dojo.require("dojox.xmpp.transportProviders._base.SocketTransportProvider");
 dojo.require("dojox.xmpp.SaxStreamReader");
+dojo.require("dojox.xmpp.transportManager");
 
 dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProviders._base.SocketTransportProvider], {
 	_streamReader: null,
