@@ -2,6 +2,7 @@ dojo.provide("dojox.xmpp.transportProviders.BoshScriptTag");
 
 dojo.require("dojox.xmpp.transportProviders._base.BoshTransportProvider");
 dojo.require("dojox.xmpp.bosh");
+dojo.require("dojox.xmpp.transportManager");
 
 dojo.declare("dojox.xmpp.transportProviders.BoshScriptTag", dojox.xmpp.transportProviders._base.BoshTransportProvider, {
 	constructor: function() {},
