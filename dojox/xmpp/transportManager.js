@@ -21,22 +21,18 @@ dojox.xmpp.transportManager = new function() {
         }
     }));
     
-	this.getTransport = function(config) {
-		if(!transport) {
-			if(!config || !dojo.isObject(config)) {
-				throw new Error("Need a configuration object to decide what transport to use and to instantiate it.")
-			}
-			
-			console.log(config);
-			
-			try {
-				transport = new (adapterRegistry.match(config))(config);
-			} catch(e) {
-				console.log(e);
-				throw new Error("No suitable transport found.");
-			}
+	this.getNewTransportInstance = function(config) {
+		if(!config || !dojo.isObject(config)) {
+			throw new Error("Need a configuration object to decide what transport to use and to instantiate it.")
 		}
 		
-		return transport;
+		console.log(config);
+		
+		try {
+			return new (adapterRegistry.match(config))(config);
+		} catch(e) {
+			console.log(e);
+			throw new Error("No suitable transport found.");
+		}
 	}
 };
