@@ -30,7 +30,7 @@ dojo.declare("dojox.xmpp.transportProviders.BoshXhr", dojox.xmpp.transportProvid
 	}
 });
 
-dojox.xmpp.transportManager.register("BoshXhr", function(props) {
-	// FIXME: This is wrong. This always returns false.
+dojox.xmpp.transportProviders.BoshXhr.check = function(props) {
+    // FIXME: This is wrong. This always returns false.
     return !!props.bindUrl;
-}, dojox.xmpp.transportProviders.BoshXhr, true);
+};

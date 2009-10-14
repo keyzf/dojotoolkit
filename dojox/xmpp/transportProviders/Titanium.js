@@ -58,7 +58,6 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 	}
 });
 
-
-dojox.xmpp.transportManager.register("Titanium", function(props) {
-	return !!window.Titanium;
-}, dojox.xmpp.transportProviders.Titanium, true);
+dojox.xmpp.transportProviders.Titanium.check = function(props) {
+    return !!window.Titanium;
+};
