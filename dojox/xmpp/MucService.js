@@ -634,10 +634,6 @@ dojo.declare("dojox.xmpp.MucService", null, {
 
     // Events
 
-    onRoomListReceived: function(rooms){},
-    
-    onRoomListReceiveFailed: function(err){},
-
     onInviteReceived: function(roomJid, from, reason){},
 
     onEnter: function(room){},
