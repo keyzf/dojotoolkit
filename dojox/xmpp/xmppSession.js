@@ -65,7 +65,7 @@ dojox.xmpp.xmppSession = function(props){
 		dojo.mixin(this, props);
 	}
 
-	this.session = dojox.xmpp.transportManager.getTransport(props); 
+	this.session = dojox.xmpp.transportManager.getNewTransportInstance(props); 
 	dojo.connect(this.session, "onStreamReady", this, "onTransportReady");
 	dojo.connect(this.session, "onTerminate", this, "onTransportTerminate");
 	dojo.connect(this.session, "onProcessProtocolResponse", this, "processProtocolResponse");
