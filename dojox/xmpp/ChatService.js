@@ -119,7 +119,7 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 	},
 
 	sendChatState: function(state){
-		if (!this.useChatState || this.firstMessage){return;}
+		if (!this.useChatState){return;}
 		if (state==this._currentState){return;}
 		
 		var req={

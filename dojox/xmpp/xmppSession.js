@@ -321,14 +321,16 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				}
 			}	
 
-			if (found>-1 && chatState){
+			if (found>-1){
 				var chat = this.chatRegister[found];
-				chat.setState(chatState);
+				chat.useChatState = (chatState != null) ? true : false;
+				if(chatState){
+					chat.setState(chatState);
 
-				if (chat.firstMessage){
-					if (chatState == dojox.xmpp.chat.ACTIVE_STATE) {
-						chat.useChatState = (chatState != null) ? true : false;
-						chat.firstMessage = false;	
+					if (chat.firstMessage){
+						if (chatState == dojox.xmpp.chat.ACTIVE_STATE) {
+							chat.firstMessage = false;
+						}
 					}
 				}
 			} 
@@ -344,7 +346,9 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				chatInstance.chatid = message.chatid;
 				chatInstance.firstMessage = true;
 				if(!chatState || chatState != dojox.xmpp.chat.ACTIVE_STATE){
-					this.useChatState = false;
+					chatInstance.useChatState = false;
+				}else{
+					chatInstance.useChatState = true;
 				}
 				this.registerChatInstance(chatInstance, message);
 			}
