@@ -526,7 +526,6 @@ dojo.declare("dojox.xmpp.MucService", null, {
                     }
                     rooms.push(room);
                 }
-                result.onComplete(rooms);
                 // FIXME for dojo.query: why doesn't plain query with
                 // "set[xmlns=...]" work?
                 var setElement = dojo.query('query set[xmlns="' + dojox.xmpp.xmpp.RSM_NS + '"]', res)[0];
@@ -557,6 +556,7 @@ dojo.declare("dojox.xmpp.MucService", null, {
                         result.next = null;
                     }
                 }
+                result.onComplete(rooms, result.next, result.previous);
             }else{
                 var err = this.session.processXmppError(res);
                 result.onError(err);
