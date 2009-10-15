@@ -132,10 +132,14 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 		var request = new dojox.string.Builder(dojox.xmpp.util.createElement("message",req,false));	
 		request.append(dojox.xmpp.util.createElement(state, {xmlns: dojox.xmpp.chat.CHAT_STATE_NS},true));
 		this._currentState = state;
-		request.append("<thread>");
-		request.append(this.chatid);
-		request.append("</thread></message>");	
-		
+		if(this.chatid){
+			request.append("<thread>");
+			request.append(this.chatid);
+			request.append("</thread>");
+		}
+
+		request.append("</message>");
+
 		this.session.dispatchPacket(request.toString());
 	},
 
