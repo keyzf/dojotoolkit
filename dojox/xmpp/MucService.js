@@ -103,7 +103,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
                     features.persistent = true;
                     break;
                 case "muc_public":
-                    features.public = true;
+                    features["public"] = true;
                     break;
                 case "muc_semianonymous":
                     features.semiAnonymous = true;
