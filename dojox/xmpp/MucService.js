@@ -352,6 +352,16 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
 					//console.log("xmppSession::chatHandler() Unknown node type: ",n.nodeName);
 				}
 			}
+
+			// Legacy delayed delivery messages, XEP-0091
+			if(n.nodeName=="x" && n.getAttribute('xmlns')==dojox.xmpp.xmpp.LEGACY_DELAYED_DELIVERY_NS){
+				message.timestamp = dojox.xmpp.util.parseLegacyTimestamp(n.getAttribute("stamp"));
+			}
+
+			// Standard delayed delivery messages, XEP-0203
+			if(n.nodeName=="delay" && n.getAttribute('xmlns')==dojox.xmpp.DELAYED_DELIVERY_NS){
+				message.timestamp = dojo.date.stamp.fromISOString(n.getAttribute("stamp"));
+			}
 		}
         var nodeOfInterest;
         if(nodeOfInterest = dojo.query("subject", msg)[0]){
