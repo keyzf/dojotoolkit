@@ -18,6 +18,9 @@ dojox.xmpp.xmpp = {
 	BIND_NS: 'urn:ietf:params:xml:ns:xmpp-bind',
 	SESSION_NS: 'urn:ietf:params:xml:ns:xmpp-session',
 	BODY_NS: "http://jabber.org/protocol/httpbind",
+
+	LEGACY_DELAYED_DELIVERY_NS: "jabber:x:delay",
+	DELAYED_DELIVERY_NS: "urn:xmpp:delay",
 	
 	XHTML_BODY_NS: "http://www.w3.org/1999/xhtml",
 	XHTML_IM_NS: "http://jabber.org/protocol/xhtml-im",
@@ -297,6 +300,16 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				}
 				if(n.getAttribute && n.getAttribute('xmlns')==dojox.xmpp.chat.CHAT_STATE_NS){
 					chatState = n.nodeName;
+				}
+
+				// Legacy delayed delivery messages, XEP-0091
+				if(n.nodeName=="x" && n.getAttribute('xmlns')==dojox.xmpp.xmpp.LEGACY_DELAYED_DELIVERY_NS){
+					message.timestamp = dojox.xmpp.util.parseLegacyTimestamp(n.getAttribute("stamp"));
+				}
+
+				// Standard delayed delivery messages, XEP-0203
+				if(n.nodeName=="delay" && n.getAttribute('xmlns')==dojox.xmpp.DELAYED_DELIVERY_NS){
+					message.timestamp = dojo.date.stamp.fromISOString(n.getAttribute("stamp"));
 				}
 			}
 

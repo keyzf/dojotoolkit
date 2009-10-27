@@ -182,3 +182,17 @@ dojox.xmpp.util.getResourceFromJid = function(jid){
 	}
 	return "";
 }
+
+dojox.xmpp.util.parseLegacyTimestamp = function(str){
+    var match = dojox.xmpp.util.parseLegacyTimestamp.regex.exec(str);
+    var result = null;
+    if(match){
+        match.shift();
+        if(match[1]){match[1]--;} // Javascript Date months are 0-based
+        result = new Date(match[0]||1970, match[1]||0, match[2]||1, match[3]||0, match[4]||0, match[5]||0);
+        var offset = -result.getTimezoneOffset();
+        result.setTime(result.getTime() + offset * 60000);
+    }
+    return result;
+}
+dojox.xmpp.util.parseLegacyTimestamp.regex = /^(\d{4})(\d{2})(\d{2})T(\d{2}):(\d{2}):(\d{2})$/;
