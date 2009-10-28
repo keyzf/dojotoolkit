@@ -13,12 +13,24 @@ dojo.declare("dojox.xml.SaxParser", null, {
 	_cdataRunning: false,
 	_cdataBuffer: "",
 	
-    constructor: function(){
+    constructor: function(dontUnescapeEntities){
         this.cname = [];
-    },
-	
-    unescapeEntities: function(stringData){
-        return stringData.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&apos;", "'").replace("&amp;", "&");
+		if (dontUnescapeEntities) {
+			this.unescapeEntities = function(stringData){
+				return stringData;
+			}
+		} else {
+			this.unescapeEntities = function(stringData){
+				// This should be replaced with a good regex
+				
+				stringData = stringData.split("&lt;").join("<");
+				stringData = stringData.split("&gt;").join(">");
+				stringData = stringData.split("&quot;").join("\"");
+				stringData = stringData.split("&apos;").join("\'");
+				stringData = stringData.split("&amp;").join("&");
+				return stringData;
+			}
+		}
     },
 	
 	// The following functions are the ones external scripts can dojo.connect to to get notifications when parsing is happening.
