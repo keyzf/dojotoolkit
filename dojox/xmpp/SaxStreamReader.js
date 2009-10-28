@@ -64,7 +64,7 @@ dojo.declare("dojox.xmpp.SaxStreamReader", null, {
 			dojo.disconnect(this._charactersConnectHandle);
 		}
 		
-        this._saxParser = new dojox.xml.SaxParser();
+        this._saxParser = new dojox.xml.SaxParser(true);
         this._saxBuffer = this._saxBuffer?this._saxBuffer.clear():new dojox.string.Builder(true);
 		this._saxDepth = 0;
 		
