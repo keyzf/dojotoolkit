@@ -474,10 +474,11 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
 });
 
 dojo.declare("dojox.xmpp.MucService", null, {
-    rooms: {},
+    rooms: null,
     
     constructor: function(domain){
         this.domain = domain;
+        this.rooms = {};
     },
     
     setSession: function(session){
