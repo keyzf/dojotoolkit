@@ -1,6 +1,6 @@
-/*global dojo, dojox */
-
 dojo.provide("dojox.xmpp.MucService");
+
+dojo.require("dojox.xmpp.disco");
 
 dojox.xmpp.muc = {
     NS: "http://jabber.org/protocol/muc",
@@ -497,84 +497,6 @@ dojo.declare("dojox.xmpp.MucService", null, {
         });
     },
 
-    _getRoomList: function(setInfo, result){
-        var self = this;
-        var iqId = this.session.getNextIqId();
-        var req = {
-            id: iqId,
-            from: dojox.xmpp.util.encodeJid(this.session.fullJid()),
-            to: this.domain,
-            type: "get"
-        }
-
-        var request = new dojox.string.Builder(dojox.xmpp.util.createElement("iq", req, false));
-        request.append(dojox.xmpp.util.createElement("query", {xmlns: dojox.xmpp.xmpp.DISCO_ITEMS_NS}, false));
-        if(setInfo){
-            var setElement = new dojox.string.Builder(dojox.xmpp.util.createElement("set", {xmlns: dojox.xmpp.xmpp.RSM_NS}, false));
-            if(setInfo.max){ setElement.append("<max>" + setInfo.max + "</max>"); }
-            if(setInfo.before){ setElement.append("<before>" + setInfo.before + "</before>"); }
-            if(setInfo.after){ setElement.append("<after>" + setInfo.after + "</after>"); }
-            setElement.append("</set>");
-            request.append(setElement);
-        }
-        request.append("</query>");
-        request.append("</iq>");
-
-        var def = this.session.dispatchPacket(request.toString(), "iq", req.id);
-        def.addCallback(this, function(res){
-            if(res.getAttribute("type") === "result"){
-                var items = dojo.query("item", res);
-                var rooms = [];
-                for(i = 0; i < items.length; ++i){
-                    var item = items[i];
-                    var jid = item.getAttribute("jid");
-                    var roomId = dojox.xmpp.util.getNodeFromJid(jid);
-                    var room = this.rooms[roomId];
-                    if(!room){
-                        room = new dojox.xmpp.muc.Room(jid, this);
-                        this.rooms[roomId] = room;
-                        this._addListeners(room);
-                    }
-                    rooms.push(room);
-                }
-                // FIXME for dojo.query: why doesn't plain query with
-                // "set[xmlns=...]" work?
-                var setElement = dojo.query('query set[xmlns="' + dojox.xmpp.xmpp.RSM_NS + '"]', res)[0];
-                if(setElement){
-                    var firstIndex = parseInt(dojo.query("first", setElement)[0].getAttribute("index"));
-                    result.first = dojo.query("first", setElement)[0].textContent;
-                    result.last = dojo.query("last", setElement)[0].textContent;
-                    result.count = parseInt(dojo.query("count", setElement)[0].textContent);
-                    // set next() and previous() handlers
-                    if(firstIndex !== 0){ // first page
-                        result.previous = function(){
-                            self._getRoomList({
-                                max: result.max,
-                                before: result.first
-                            }, result);
-                        }
-                    }else{
-                        result.previous = null;
-                    }
-                    if(firstIndex + items.length !== result.count){ // last page
-                        result.next = function(){
-                            self._getRoomList({
-                                max: result.max,
-                                after: result.last
-                            }, result);
-                        }
-                    }else{
-                        result.next = null;
-                    }
-                }
-                result.onComplete(rooms, result.next, result.previous);
-            }else{
-                var err = this.session.processXmppError(res);
-                result.onError(err);
-            }
-        });
-    },
-
     getRoomList: function(onComplete, onError, max){
         if(!onComplete){
             throw new Error("MucService::getRoomList() onComplete is null or undefined");
@@ -583,21 +505,50 @@ dojo.declare("dojox.xmpp.MucService", null, {
             throw new Error("MucService::getRoomList() onError is null or undefined");
         }
 
-        var result = {
-            previous: null,
-            next: null,
-            onComplete: onComplete,
-            onError: onError,
-            max: max
-        }
+        var def = dojox.xmpp.disco.items(this.session, this.domain, null, max);
 
-        if(max){
-            this._getRoomList({ max: max }, result);
-        }else{
-            this._getRoomList(null, result);
-        }
+        var handleResult = dojo.hitch(this, function(result){
+            var rooms = [];
+            var items = result.items;
+            var next = null;
+            var previous = null;
+            for(i = 0; i < items.length; ++i){
+                var item = items[i];
+                var jid = item.getAttribute("jid");
+                var roomId = dojox.xmpp.util.getNodeFromJid(jid);
+                var room = this.rooms[roomId];
+                if(!room){
+                    room = new dojox.xmpp.muc.Room(jid, this);
+                    this.rooms[roomId] = room;
+                    this._addListeners(room);
+                }
+                rooms.push(room);
+            }
+            if(result.next){
+                next = function(){
+                    def = result.next();
+                    def.addCallback(handleResult);
+                    def.addErrback(handleError);
+                    return def;
+                }
+            }
+            if(result.previous){
+                previous = function(){
+                    def = result.previous();
+                    def.addCallback(handleResult);
+                    def.addErrback(handleError);
+                    return def;
+                }
+            }
+            onComplete(rooms, next, previous);
+        });
 
-        return result;
+        var handleError = dojo.hitch(this, function(err){
+            onError(err);
+        });
+
+        def.addCallback(handleResult);
+        def.addErrback(handleError);
     },
 
     getRoom: function(roomId){
