@@ -19,8 +19,8 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
         this.socket.onRead(dojo.hitch(this._streamReader, "parse"));
         
 		if(this.socket.onTimeout) {
+			console.log("dojox.xmpp.transportProviders.Titanium: Connection Timed out");
             this.socket.onTimeout(dojo.hitch(this, function() {
-                this.log( "Socket Timeout." );
                 this.endSession();
             }));
 		}
@@ -30,9 +30,9 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 		if(this.socket.onError) {
             this.socket.onError(dojo.hitch(this, function() {
                 if(this.isErrorCall){
+					console.log("dojox.xmpp.transportProviders.Titanium: Socket error");
                     this.isErrorCall = false;
-                    this.log( "Socket Error" );
-                    this.onSocketError();
+                    this.onConnectionError();
                 }
             }));
 		}
@@ -47,8 +47,15 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 	},
 	
 	close: function(reason) {
+		
 		this.inherited(arguments);
-		this.socket.close();
+		try{
+			if(!this.socket.isClosed()){
+				this.socket.close();	
+			}
+		}catch(ex){
+			console.log("Titanium.close:: Socket already closed");
+		}
 		this.socket = null;
 	},
 	

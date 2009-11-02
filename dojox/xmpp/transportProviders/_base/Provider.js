@@ -86,6 +86,10 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 	onStreamReady: function() {
 		// Event signalling that the stream is ready to interact with
 	},
+	onConnectionError: function(){
+		// Event signalling that the stream got some error
+	},
+	
 	
 	processProtocolResponse: function(msg) {
         this.onProcessProtocolResponse(msg);
