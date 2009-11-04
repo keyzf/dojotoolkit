@@ -17,11 +17,18 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
         
         this.socket = Titanium.Network.createTCPSocket(this.server, this.port);
         this.socket.onRead(dojo.hitch(this._streamReader, "parse"));
-        
+        this.timeOut = 1000;
 		if(this.socket.onTimeout) {
-			console.log("dojox.xmpp.transportProviders.Titanium: Connection Timed out");
+			
             this.socket.onTimeout(dojo.hitch(this, function() {
+				console.log("dojox.xmpp.transportProviders.Titanium: Connection Timed Out");
                 this.endSession();
+				this.onConnectionTimeOut(
+				{
+					server: this.server,
+					port: this.port
+				}
+				);
             }));
 		}
         
@@ -33,15 +40,16 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 					console.log("dojox.xmpp.transportProviders.Titanium: Socket error");
                     this.isErrorCall = false;
                     this.onConnectionError();
+					this.close();
                 }
             }));
 		}
         
-        if(this.socket.connect()) {
+        if(this.socket.connect(this.timeOut)) {
             console.log("Socket successfully connected: domain =" + this.domain + ", server =" + this.server + ", port =" + this.port );
             this.restartStream();
         } else {
-            console.log("Titanium.Network socket failed to connect");
+            console.log("dojox.xmpp.transportProviders.Titanium: Socket failed to connect");
             this.close();
         }
 	},
@@ -50,11 +58,12 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 		
 		this.inherited(arguments);
 		try{
-			if(!this.socket.isClosed()){
-				this.socket.close();	
+			if( this.socket && !this.socket.isClosed()){
+				this.socket.close();
+					
 			}
 		}catch(ex){
-			console.log("Titanium.close:: Socket already closed");
+			console.error("Titanium.close:: Socket already closed");
 		}
 		this.socket = null;
 	},

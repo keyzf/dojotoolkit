@@ -88,8 +88,11 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 	},
 	onConnectionError: function(){
 		// Event signalling that the stream got some error
+		console.log('Provider: connection error');
 	},
-	
+	onConnectionTimeOut: function(args){
+		// Event signalling that there was a connection timeout
+	},
 	
 	processProtocolResponse: function(msg) {
         this.onProcessProtocolResponse(msg);
