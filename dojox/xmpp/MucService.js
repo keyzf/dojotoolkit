@@ -119,7 +119,10 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
                     break;
             }
         }
-
+        var nodeOfInterest=dojo.query("field[var='muc#roominfo_subject']/value",queryNode)[0];
+        if(nodeOfInterest){
+            result.subject=nodeOfInterest.textContent;
+        }
         result.features = features;
         return result;
     },
