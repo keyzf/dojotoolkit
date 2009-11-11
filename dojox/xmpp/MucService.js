@@ -127,7 +127,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         return result;
     },
 
-    enter: function(nick, password){
+    enter: function(nick, password, setPresence){
         if(!nick){
             throw new Error("MucService::Room::enter() nick is null or undefined");
         }
@@ -140,7 +140,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         if(!this.features){
             var retval;
             var successHandle = dojo.connect(this, "onRoomInfoReceived", this, function(){
-                retval = this.enter(nick, password);
+                retval = this.enter(nick, password, setPresence);
                 dojo.disconnect(successHandle);
                 dojo.disconnect(failHandle);
             });
@@ -163,7 +163,14 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             from: dojox.xmpp.util.encodeJid(this.session.fullJid()),
             to: dojox.xmpp.util.encodeJid(this.bareJid + "/" + nick)
         }, false));
-
+        if(setPresence){
+            if(setPresence.show){
+                request.append("<show>" + setPresence.show + "</show>");
+            }
+            if(setPresence.status){
+                request.append("<status>" + setPresence.status+ "</status>");
+            }
+        }
         var x = new dojox.string.Builder(dojox.xmpp.util.createElement("x", {
             xmlns: dojox.xmpp.muc.NS
         }, false));
