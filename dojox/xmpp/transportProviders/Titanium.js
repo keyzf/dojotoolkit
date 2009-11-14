@@ -69,8 +69,12 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 	},
 	
 	_writeToSocket: function(data) {
-		this.inherited(arguments);
-        this.socket.write(data);
+		try {
+			this.inherited(arguments);
+			this.socket.write(data);
+		}catch(e){
+			
+		}
 	}
 });
 
