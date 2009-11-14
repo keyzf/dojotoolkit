@@ -334,7 +334,8 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         // copied from xmppSession.js
         var message = {
 			from: msg.getAttribute('from'),
-			to: msg.getAttribute('to')
+			to: msg.getAttribute('to'),
+			xml:msg
 		}
         for (var i=0; i<msg.childNodes.length; i++){
 			var n = msg.childNodes[i];
