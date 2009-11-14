@@ -79,6 +79,7 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 		}
 
 		var message = new dojox.string.Builder(dojox.xmpp.util.createElement("message",req,false));
+
 		var html = dojox.xmpp.util.createElement("html", { "xmlns":dojox.xmpp.xmpp.XHTML_IM_NS},false)
 
 		var bodyTag = dojox.xmpp.util.createElement("body", {"xml:lang":this.session.lang, "xmlns":dojox.xmpp.xmpp.XHTML_BODY_NS}, false) + msg.body + "</body>";
@@ -114,10 +115,12 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 			this._currentState = dojox.xmpp.chat.ACTIVE_STATE;
 		}
 		message.append("</message>");
-	
+		this.onMessageCreated(message.toString(),this.uid, this.session.jid);
 		this.session.dispatchPacket(message.toString());
 	},
-
+	onMessageCreated: function(message,toUser,fromUser){
+		
+	},
 	sendChatState: function(state){
 		if (!this.useChatState){return;}
 		if (state==this._currentState){return;}

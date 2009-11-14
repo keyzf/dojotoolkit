@@ -265,9 +265,12 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		chatHandler: function(msg){
 			//console.log("xmppSession::chatHandler() ", msg);
+			
+
 			var message = {
 				from: msg.getAttribute('from'),
-				to: msg.getAttribute('to')
+				to: msg.getAttribute('to'),
+				xml: (new XMLSerializer()).serializeToString(msg)
 			}
 
 			var chatState = null;
@@ -358,6 +361,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				var chatInstance = new dojox.xmpp.ChatService();
 				chatInstance.uid = this.getBareJid(message.from);
 				chatInstance.chatid = message.chatid;
+				
 				chatInstance.firstMessage = true;
 				if(!chatState || chatState != dojox.xmpp.chat.ACTIVE_STATE){
 					chatInstance.useChatState = false;
