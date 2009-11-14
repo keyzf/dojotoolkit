@@ -401,8 +401,17 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
                     nick: nick,
                     roomJid: this.bareJid + "/" + nick,
                     jid: itemNode.getAttribute("jid"),
+                    presence: {show:"",status:""},
                     affiliation: itemNode.getAttribute("affiliation"),
                     role: itemNode.getAttribute("role")
+                }
+                var statusNode = dojo.query("presence>status", msg)[0];
+                if(statusNode){
+                    item.presence.status=statusNode.textContent;
+                }
+                var showNode = dojo.query("presence>show", msg)[0];
+                if(showNode){
+                    item.presence.show=showNode.textContent;
                 }
                 this._addOccupant(nick, item);
             }else if(type === "unavailable"){
