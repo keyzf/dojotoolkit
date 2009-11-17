@@ -73,6 +73,7 @@ dojox.xmpp.xmppSession = function(props){
 	dojo.connect(this.session, "onTerminate", this, "onTransportTerminate");
 	dojo.connect(this.session, "onProcessProtocolResponse", this, "processProtocolResponse");
 	dojo.connect(this.session, "onConnectionError", this, "onConnectionError");
+	dojo.connect(this.session, "onHostNotFound",this,"onHostNotFound");
 };
 
 
@@ -892,6 +893,9 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		},
 
 		onConnectionError: function(){
+			
+		},
+		onHostNotFound: function(args){
 			
 		},
 		onRegisterMucInstance: function(mucInstance){},

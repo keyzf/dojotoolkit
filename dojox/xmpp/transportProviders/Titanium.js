@@ -44,14 +44,18 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
                 }
             }));
 		}
-        
-        if(this.socket.connect(this.timeOut)) {
-            console.log("Socket successfully connected: domain =" + this.domain + ", server =" + this.server + ", port =" + this.port );
-            this.restartStream();
-        } else {
-            console.log("dojox.xmpp.transportProviders.Titanium: Socket failed to connect");
-            this.close();
-        }
+        try {
+			if (this.socket.connect(this.timeOut)) {
+				console.log("Socket successfully connected: domain =" + this.domain + ", server =" + this.server + ", port =" + this.port);
+				this.restartStream();
+			}
+			else {
+				console.log("dojox.xmpp.transportProviders.Titanium: Socket failed to connect");
+				this.close();
+			}
+		}catch(e){
+			this.onHostNotFound(e);
+		}
 	},
 	
 	close: function(reason) {
@@ -67,7 +71,9 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 		}
 		this.socket = null;
 	},
-	
+	onHostNotFound: function(args){
+		this.inherited(arguments);
+	},
 	_writeToSocket: function(data) {
 		try {
 			this.inherited(arguments);

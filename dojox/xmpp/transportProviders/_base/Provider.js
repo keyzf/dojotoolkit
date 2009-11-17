@@ -93,7 +93,9 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 	onConnectionTimeOut: function(args){
 		// Event signalling that there was a connection timeout
 	},
-	
+	onHostNotFound: function(args){
+		// Event signalling that the domain was not found
+	},
 	processProtocolResponse: function(msg) {
         this.onProcessProtocolResponse(msg);
 		
