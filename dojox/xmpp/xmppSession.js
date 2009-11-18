@@ -498,6 +498,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 						r = this.createRosterEntry(n);
 						rosterItem = r;
 						state = dojox.xmpp.roster.ADDED;
+						this.roster.push(r);
 					}
 				
 					switch(state){
