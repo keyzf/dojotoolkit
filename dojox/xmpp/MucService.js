@@ -328,6 +328,12 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             this._occupants[newNick] = item;
         }
     },
+    
+    _removeAllOccupants: function(){
+        for(var nick in this._occupants){
+            this._removeOccupant(nick);
+        }
+    },
 
     handleMessage: function(msg){
         var type = msg.getAttribute("type");
@@ -457,17 +463,20 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
                 handleNickPresence(fromNick);
             }
             if(fromNick === this.nick && type === "unavailable"){
-                this.state = dojox.xmpp.muc.roomState.NONE;
+                this._onExit();
             }
             break;
         case dojox.xmpp.muc.roomState.EXITING:
             if(fromNick === this.nick && type === "unavailable"){
-                this._removeOccupant(this.nick);
-                this.state = dojox.xmpp.muc.roomState.NONE;
-                this.onExit();
+                this._onExit();
             }
             break;
         }
+    },
+    _onExit: function(){
+        this.state = dojox.xmpp.muc.roomState.NONE;
+        this._removeAllOccupants();
+        this.onExit();
     },
 
     // Events
