@@ -2,7 +2,28 @@ dojo.provide("dojox.xmpp.disco");
 
 dojo.require("dojox.string.Builder");
 
-dojox.xmpp.disco.info = function(session, to, node){
+dojox.xmpp.disco.info = function(/*Object*/ props){
+    // summary:
+    //        Make a disco#info query
+    // props:
+    //        A hash of the various parameters needed, which are described below
+    // onComplete: Function
+    //        Called if the query was successful. Gets the list of childNodes
+    //        returned by the respone's <query> element as argument
+    // onError: Function
+    //        Called if the query was unsuccessful. Gets an error object as the
+    //        single argument
+    // session: xmppSession
+    //        The current xmppSession
+    // to: String
+    //        The target entity (value of the "to" attribute in the <iq>
+    //        element)
+    // node: String?
+    //        Optional. Info node towards which a request maybe directed (value
+    //        of the "node" attribute in the <query> element)
+    var session = props.session;
+    var to = props.to;
+    var node = props.node;
     var req = {
         id: session.getNextIqId(),
         from: dojox.xmpp.util.encodeJid(session.fullJid()),
@@ -18,21 +39,47 @@ dojox.xmpp.disco.info = function(session, to, node){
     request.append(dojox.xmpp.util.createElement("query", queryAttr, true));
     request.append("</iq>");
 
-    var def = new dojo.Deferred();
     var sessionDef = session.dispatchPacket(request.toString(), "iq", req.id);
     sessionDef.addCallback(function(res){
         if(res.getAttribute("type") === "result"){
             var queryNode = dojo.query("query", res)[0];
-            def.callback(queryNode.childNodes);
+            props.onComplete(queryNode.childNodes);
         }else{
             var err = session.processXmppError(res);
-            def.errback(err);
+            props.onError(err);
         }
     });
-    return def;
 }
 
-dojox.xmpp.disco.items = function(session, to, node, max){
+dojox.xmpp.disco.items = function(props){
+    // summary:
+    //        Make a disco#items query
+    // props:
+    //        A hash of the various parameters needed, which are described below
+    // onComplete: Function
+    //        Called if the query was successful. Gets three parameters -- 1)
+    //        the list of <item> nodes, 2) a handler for fetching the next set
+    //        of results, and 3) a handler for fetching the previous set of
+    //        results. If there are no next or previous pages, these parameters
+    //        are null
+    // onError: Function
+    //        Called if the query was unsuccessful. Gets an error object as the
+    //        single argument
+    // session: xmppSession
+    //        The current xmppSession
+    // to: String
+    //        The target entity (value of the "to" attribute in the <iq>
+    //        element)
+    // node: String
+    //        Optional. Info node towards which a request maybe directed (value
+    //        of the "node" attribute in the <query> element)
+    // max: Integer
+    //        Optional. Maximum number of items to receive in one response. Use
+    //        paging to get next or previous values.
+    var session = props.session;
+    var to = props.to;
+    var node = props.node;
+    var max = props.max;
     var sessionDef;
     var def = new dojo.Deferred();
     max = max || null;
@@ -76,7 +123,7 @@ dojox.xmpp.disco.items = function(session, to, node, max){
             // FIXME for dojo.query: why doesn't plain query with
             // "set[xmlns=...]" work?
             var setElement = dojo.query('query set[xmlns="' + dojox.xmpp.xmpp.RSM_NS + '"]', res)[0];
-            if(setElement){
+            if(setElement && dojo.query("first", setElement)[0]){
                 var firstIndex = parseInt(dojo.query("first", setElement)[0].getAttribute("index"));
                 var first = dojo.query("first", setElement)[0].textContent;
                 var last = dojo.query("last", setElement)[0].textContent;
@@ -84,26 +131,21 @@ dojox.xmpp.disco.items = function(session, to, node, max){
                 // set next() and previous() handlers
                 if(firstIndex !== 0){ // not on first page
                     previous = function(){
-                        def = new dojo.Deferred();
                         dispatchRequest(max, first, null);
-                        return def;
                     }
                 }
                 if(firstIndex + items.length !== count){ // not on last page
                     next = function(){
-                        def = new dojo.Deferred();
                         dispatchRequest(max, null, last);
-                        return def;
                     }
                 }
             }
-            def.callback({ items: items, next: next, previous: previous });
+            props.onComplete(items, next, previous);
         }else{
             var err = session.processXmppError(res);
-            def.errback(err);
+            props.onError(err);
         }
     }
 
     dispatchRequest(max);
-    return def;
 }
