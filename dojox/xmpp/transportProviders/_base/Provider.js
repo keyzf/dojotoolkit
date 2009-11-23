@@ -86,19 +86,18 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 	onStreamReady: function() {
 		// Event signalling that the stream is ready to interact with
 	},
-	onConnectionError: function(){
+	onConnectionReset: function(args){
 		// Event signalling that the stream got some error
-		console.log('Provider: connection error');
+	},
+	onUnableToCreateConnection: function(args){
+		// Event signalling unable to create a connection
 	},
 	onConnectionTimeOut: function(args){
 		// Event signalling that there was a connection timeout
 	},
-	onHostNotFound: function(args){
-		// Event signalling that the domain was not found
-	},
+
 	processProtocolResponse: function(msg) {
         this.onProcessProtocolResponse(msg);
-		
         var key = msg.nodeName + "-" + msg.getAttribute( "id" );
         var def = this._deferredRequests[key];
         if (def){

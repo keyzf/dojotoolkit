@@ -72,8 +72,8 @@ dojox.xmpp.xmppSession = function(props){
 	dojo.connect(this.session, "onStreamReady", this, "onTransportReady");
 	dojo.connect(this.session, "onTerminate", this, "onTransportTerminate");
 	dojo.connect(this.session, "onProcessProtocolResponse", this, "processProtocolResponse");
-	dojo.connect(this.session, "onConnectionError", this, "onConnectionError");
-	dojo.connect(this.session, "onHostNotFound",this,"onHostNotFound");
+	dojo.connect(this.session, "onConnectionReset", this, "onConnectionReset");
+	dojo.connect(this.session, "onUnableToCreateConnection", this,"onUnableToCreateConnection");
 };
 
 
@@ -126,6 +126,9 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				case "message":
 				case "features":
 					this[type + "Handler"](msg);
+					break;
+				case "error":
+					this.close();
 					break;
 				default:
 					//console.log("default action?", msg.getAttribute('xmlns'));
@@ -842,10 +845,11 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			////console.log("xmppSession::onRegisterChatInstance()");
 		},
 
-		onConnectionError: function(){
-			
+		onConnectionReset: function(args){
+
 		},
-		onHostNotFound: function(args){
+
+		onUnableToCreateConnection: function(args){
 			
 		},
 		onRegisterMucInstance: function(mucInstance){},
