@@ -328,6 +328,12 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             this._occupants[newNick] = item;
         }
     },
+    
+    _removeAllOccupants: function(){
+        for(var nick in this._occupants){
+            this._removeOccupant(nick);
+        }
+    },
 
     handleMessage: function(msg){
         var type = msg.getAttribute("type");
@@ -457,17 +463,20 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
                 handleNickPresence(fromNick);
             }
             if(fromNick === this.nick && type === "unavailable"){
-                this.state = dojox.xmpp.muc.roomState.NONE;
+                this._onExit();
             }
             break;
         case dojox.xmpp.muc.roomState.EXITING:
             if(fromNick === this.nick && type === "unavailable"){
-                this._removeOccupant(this.nick);
-                this.state = dojox.xmpp.muc.roomState.NONE;
-                this.onExit();
+                this._onExit();
             }
             break;
         }
+    },
+    _onExit: function(){
+        this.state = dojox.xmpp.muc.roomState.NONE;
+        this._removeAllOccupants();
+        this.onExit();
     },
 
     // Events
@@ -525,13 +534,9 @@ dojo.declare("dojox.xmpp.MucService", null, {
             throw new Error("MucService::getRoomList() onError is null or undefined");
         }
 
-        var def = dojox.xmpp.disco.items(this.session, this.domain, null, max);
-
-        var handleResult = dojo.hitch(this, function(result){
+        var handleResult = dojo.hitch(this, function(items, next, previous){
             var rooms = [];
-            var items = result.items;
-            var next = null;
-            var previous = null;
+            var items = items;
             for(i = 0; i < items.length; ++i){
                 var item = items[i];
                 var jid = item.getAttribute("jid");
@@ -544,22 +549,6 @@ dojo.declare("dojox.xmpp.MucService", null, {
                 }
                 rooms.push(room);
             }
-            if(result.next){
-                next = function(){
-                    def = result.next();
-                    def.addCallback(handleResult);
-                    def.addErrback(handleError);
-                    return def;
-                }
-            }
-            if(result.previous){
-                previous = function(){
-                    def = result.previous();
-                    def.addCallback(handleResult);
-                    def.addErrback(handleError);
-                    return def;
-                }
-            }
             onComplete(rooms, next, previous);
         });
 
@@ -567,8 +556,13 @@ dojo.declare("dojox.xmpp.MucService", null, {
             onError(err);
         });
 
-        def.addCallback(handleResult);
-        def.addErrback(handleError);
+        dojox.xmpp.disco.items({
+            onComplete: handleResult,
+            onError: handleError,
+            session: this.session,
+            to: this.domain,
+            max: max
+        });
     },
 
     getRoom: function(roomId){

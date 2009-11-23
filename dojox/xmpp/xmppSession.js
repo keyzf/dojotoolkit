@@ -501,6 +501,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 						r = this.createRosterEntry(n);
 						rosterItem = r;
 						state = dojox.xmpp.roster.ADDED;
+						this.roster.push(r);
 					}
 				
 					switch(state){
@@ -808,57 +809,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			return msg;	
 		},
 		
-		getChatRooms: function(onSuccess, onFailure) {
-			var props = {
-				id: this.getNextIqId(),
-				to: this.domain,
-				from: this.jid + "/" + this.resource,
-				type: "get"
-			}
-			var req = new dojox.string.Builder(dojox.xmpp.util.createElement("iq", props, false));
-			req.append(dojox.xmpp.util.createElement("query",{xmlns: dojox.xmpp.xmpp.DISCO_ITEMS_NS},true));
-			req.append("</iq>");
-
-			var def = this.dispatchPacket(req,"iq", props.id);
-			def.addCallback(this, "onRetrievalChatRooms", onSuccess, onFailure);
-		},
-		onRetrievalChatRooms: function(onSuccess, onFailure, msg) {
-			var chatServices = [];
-			if ((msg.getAttribute('type')=='result') && msg.hasChildNodes()){
-				var query = msg.getElementsByTagName('query')[0];
-				if (query.getAttribute('xmlns')==dojox.xmpp.xmpp.DISCO_ITEMS_NS){
-					for (var i=0;i<query.childNodes.length;i++){
-						if (query.childNodes[i].nodeName=="item"){
-							var childNode = query.childNodes[i];
-							chatServices.push({
-								jid: childNode.getAttribute("jid"),
-								name: childNode.getAttribute("name")
-							});
-						}
-					}
-				}	
-			}
-			else if(msg.getAttribute('type')=="error"){
-				onFailure("Error while getting chat services.");
-				console.log("Error while getting chat services.");
-			}
-			for(var i in chatServices) {
-				try
-				{
-					var mucService = new dojox.xmpp.MucService(chatServices[i].jid);
-					var session = pw.desktop.getKernel().getCurrentUserSession().getSession();
-			        session.registerMucInstance(mucService);
-					mucService.getRoomList(function(rooms) {
-						onSuccess(rooms, chatServices[i]);
-					}, onFailure);
-				}
-				catch (e)
-				{
-					onFailure("Error in getting chat rooms of service " + chatService[i]);
-					console.error("Error in getting chat rooms of service " + chatService[i]);
-				}
-			}
-		},
 		onRosterUpdated: function() {},
 
 		onSubscriptionRequest: function(req){},
