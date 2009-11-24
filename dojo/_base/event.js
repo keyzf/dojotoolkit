@@ -568,7 +568,7 @@ dojo.require("dojo._base.connect");
 					// we need to listen to onkeydown to synthesize
 					// keypress events that otherwise won't fire
 					// in Safari 3.1+: https://lists.webkit.org/pipermail/webkit-dev/2007-December/002992.html
-					handle._stealthKeyDownHandle = del._add(node, "keydown", function(evt){
+					handle._stealthKeyDownHandle = del._add(node, "keyup", function(evt){
 						//A variation on the IE _stealthKeydown function
 						//Synthesize an onkeypress event, but only for unprintable characters.
 						var k=evt.keyCode;
