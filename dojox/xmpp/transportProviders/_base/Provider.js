@@ -97,14 +97,16 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 	},
 
 	processProtocolResponse: function(msg) {
-        this.onProcessProtocolResponse(msg);
-        var key = msg.nodeName + "-" + msg.getAttribute( "id" );
-        var def = this._deferredRequests[key];
-        if (def){
-            def.callback(msg);
-            delete this._deferredRequests[key];
-        }
+		setTimeout(dojo.hitch(this, function(){
+			this.onProcessProtocolResponse(msg);
+			var key = msg.nodeName + "-" + msg.getAttribute("id");
+			var def = this._deferredRequests[key];
+			if (def) {
+				def.callback(msg);
+				delete this._deferredRequests[key];
+			}
+		}), 50);  // Give the UI some breathing time. 50ms delay is not the end of the world.
         
-        return msg;
+		return msg;
 	}
 });
