@@ -96,16 +96,14 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 		// Event signalling that there was a connection timeout
 	},
 
-	processProtocolResponse: function(msg) {
-		setTimeout(dojo.hitch(this, function(){
-			this.onProcessProtocolResponse(msg);
-			var key = msg.nodeName + "-" + msg.getAttribute("id");
-			var def = this._deferredRequests[key];
-			if (def) {
-				def.callback(msg);
-				delete this._deferredRequests[key];
-			}
-		}), 50);  // Give the UI some breathing time. 50ms delay is not the end of the world.
+	stanzaHandler: function(msg) {
+		this.onXmppStanza(msg);
+		var key = msg.nodeName + "-" + msg.getAttribute("id");
+		var def = this._deferredRequests[key];
+		if (def) {
+			def.callback(msg);
+			delete this._deferredRequests[key];
+		}
         
 		return msg;
 	}

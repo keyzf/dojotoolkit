@@ -10,7 +10,7 @@ dojo.declare("dojox.xmpp.transportProviders._base.SocketTransportProvider", [doj
 		this._streamReader = new dojox.xmpp.SaxStreamReader();
         dojo.connect(this._streamReader, "onSessionStart", this, "onStreamReady");
         dojo.connect(this._streamReader, "onSessionEnd", this, "close");
-        dojo.connect(this._streamReader, "onStanza", this, "processProtocolResponse");
+        dojo.connect(this._streamReader, "onStanza", this, "stanzaHandler");
     },
     
     open: function() {
