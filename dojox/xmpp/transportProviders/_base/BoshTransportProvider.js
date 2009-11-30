@@ -289,7 +289,7 @@ dojo.declare("dojox.xmpp.transportProviders._base.BoshTransportProvider", dojox.
 		}
 		
 		dojo.forEach(body.childNodes, function(node){
-			this.processProtocolResponse(node, rid);
+			this.stanzaHandler(node, rid);
 		}, this);
 		
 		if (this._transmitState == "idle") {

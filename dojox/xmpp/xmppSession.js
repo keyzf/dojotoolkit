@@ -72,7 +72,7 @@ dojox.xmpp.xmppSession = function(props){
 	this.session = dojox.xmpp.transportManager.getNewTransportInstance(props); 
 	dojo.connect(this.session, "onStreamReady", this, "onTransportReady");
 	dojo.connect(this.session, "onTerminate", this, "onTransportTerminate");
-	dojo.connect(this.session, "onProcessProtocolResponse", this, "processProtocolResponse");
+	dojo.connect(this.session, "onXmppStanza", this, "handlePacket");
 	dojo.connect(this.session, "onConnectionReset", this, "onConnectionReset");
 	dojo.connect(this.session, "onUnableToCreateConnection", this,"onUnableToCreateConnection");
 	
@@ -164,19 +164,19 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			});
         },
 
-		processProtocolResponse: function(msg){
+		handlePacket: function(msg){
 			//console.log("xmppSession::processProtocolResponse() ", msg, msg.nodeName);
 			var matchCount = 0;
             dojo.forEach(this._registeredPacketHandlers, function(handler) {
                 if(handler.condition(msg)) {
 					matchCount++;
-                    setTimeout(function() {    // Give some breathing room to the UI
+                    setTimeout(function() {
                         try {
                             handler.handler(msg);
                         } catch(e) {
                             console.error("Error when executing the ", handler.name, " xmpp packet handler: ", e);
                         }
-                    }, matchCount*100);
+                    }, matchCount*100);    // Give some breathing room to the UI
                 }
             });
 		},
