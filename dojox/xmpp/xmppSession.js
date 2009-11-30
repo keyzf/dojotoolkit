@@ -62,6 +62,7 @@ dojox.xmpp.xmppSession = function(props){
 	this.chatRegister = [];
 	this.mucRegister = [];
 	this._iqId = Math.round(Math.random() * 1000000000);
+	this._registeredPacketHandlers = [];
 
 	//mixin any options that we want to provide to this service
 	if (props && dojo.isObject(props)) {
@@ -74,11 +75,47 @@ dojox.xmpp.xmppSession = function(props){
 	dojo.connect(this.session, "onProcessProtocolResponse", this, "processProtocolResponse");
 	dojo.connect(this.session, "onConnectionReset", this, "onConnectionReset");
 	dojo.connect(this.session, "onUnableToCreateConnection", this,"onUnableToCreateConnection");
+	
+	// Register the packet handlers:
+	
+	function getNodeName(msg) {
+        var type = msg.nodeName;
+        var nsIndex = type.indexOf(":");
+        if(nsIndex > 0) {
+            type = type.substring(nsIndex+1);
+        }
+		return type
+	}
+	
+    this.registerPacketHandler("iq", function(msg) {
+        return getNodeName(msg) === "iq";
+    }, dojo.hitch(this, "iqHandler"));
+    
+    this.registerPacketHandler("presence", function(msg) {
+        return getNodeName(msg) === "presence";
+    }, dojo.hitch(this, "presenceHandler"));
+    
+    this.registerPacketHandler("message", function(msg) {
+        return getNodeName(msg) === "message";
+    }, dojo.hitch(this, "messageHandler"));
+    
+    this.registerPacketHandler("features", function(msg) {
+        return getNodeName(msg) === "features";
+    }, dojo.hitch(this, "featuresHandler"));
+    
+    this.registerPacketHandler("error", function(msg) {
+        return getNodeName(msg) === "error";
+    }, dojo.hitch(this, function() {
+        this.close();
+    }));
+    
+    this.registerPacketHandler("sasl", function(msg) {
+        return msg.getAttribute("xmlns") === dojox.xmpp.xmpp.SASL_NS;
+    }, dojo.hitch(this, "saslHandler"));
 };
 
 
 dojo.extend(dojox.xmpp.xmppSession, {
-
 		roster: [],
 		chatRegister: [],
 		_iqId: 0,
@@ -113,29 +150,35 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			this.session.close("unavailable");	
 		},
 
+        registerPacketHandler: function(name, condition, handler) {
+			if (dojo.isString(condition)) {
+				condition = function(msg) {
+					return !!(dojo.query(condition, msg).length);
+				};
+			}
+			
+			this._registeredPacketHandlers.push({
+				name: name,
+				condition: condition,
+				handler: handler
+			});
+        },
+
 		processProtocolResponse: function(msg){
 			//console.log("xmppSession::processProtocolResponse() ", msg, msg.nodeName);
-			var type = msg.nodeName;
-			var nsIndex =type.indexOf(":");
-			if(nsIndex > 0) {
-				type = type.substring(nsIndex+1);
-			}
-			switch(type){
-				case "iq":
-				case "presence":
-				case "message":
-				case "features":
-					this[type + "Handler"](msg);
-					break;
-				case "error":
-					this.close();
-					break;
-				default:
-					//console.log("default action?", msg.getAttribute('xmlns'));
-					if(msg.getAttribute('xmlns')==dojox.xmpp.xmpp.SASL_NS){
-						this.saslHandler(msg);
-					}	
-			}
+			var matchCount = 0;
+            dojo.forEach(this._registeredPacketHandlers, function(handler) {
+                if(handler.condition(msg)) {
+					matchCount++;
+                    setTimeout(function() {    // Give some breathing room to the UI
+                        try {
+                            handler.handler(msg);
+                        } catch(e) {
+                            console.error("Error when executing the ", handler.name, " xmpp packet handler: ", e);
+                        }
+                    }, matchCount*100);
+                }
+            });
 		},
 
 		//HANDLERS 
