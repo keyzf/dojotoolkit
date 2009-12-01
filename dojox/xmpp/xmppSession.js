@@ -88,6 +88,7 @@ dojox.xmpp.xmppSession = function(props){
 	}
 	
     this.registerPacketHandler("iq", "iq[type='set']", dojo.hitch(this, "iqSetHandler"));
+	
 	/*
 	this.registerPacketHandler("iq", "iq[type='get']", dojo.hitch(this, function() {
 		this.sendStanzaError('iq', this.domain, msg.getAttribute('from'), 'cancel', 'service-unavailable', 'service not implemented');
@@ -98,9 +99,21 @@ dojox.xmpp.xmppSession = function(props){
 		return getNodeName(msg) === "presence";
 	}, dojo.hitch(this, "presenceHandler"));
     
-	this.registerPacketHandler("message", function(msg) {
-		return getNodeName(msg) === "message";
-	}, dojo.hitch(this, "messageHandler"));
+	this.registerPacketHandler("MucMessage", dojo.hitch(this, function(msg) {
+		return (msg.nodeName==="message") && this.isMucJid(msg.getAttribute("from")); 
+	}), dojo.hitch(this, function(msg) {
+		this.getMucInstanceFromJid(msg.getAttribute("from").handleMessage(msg));
+	}));
+    
+	this.registerPacketHandler("ChatMessage", dojo.hitch(this, function(msg) {
+		return (msg.nodeName==="message") && (!this.isMucJid(msg.getAttribute("from")) && (msg.getAttribute("type")==="chat")); 
+	}), dojo.hitch(this, "chatHandler"));
+    
+	/*
+	this.registerPacketHandler("SimpleMessage", dojo.hitch(this, function(msg) {
+		return (msg.nodeName==="message") && (!this.isMucJid(msg.getAttribute("from")) && (msg.getAttribute("type")==="normal")); 
+	}), dojo.hitch(this, "simpleMessageHandler"));
+	*/
     
 	this.registerPacketHandler("features", function(msg){
 		// Unfortunately, dojo.query doesn't support namespaced element names in FF. Bummer. Getting the node name manually here.
@@ -184,21 +197,23 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			envelope.appendChild(msg.cloneNode(true));
 			
 			dojo.forEach(this._registeredPacketHandlers, function(handler){
-				if (handler.condition(msg)) {
-					matchCount++;
-					setTimeout(function(){
-						try {
+				try {
+					if (handler.condition(msg)) {
+						matchCount++;
+						setTimeout(function(){
 							handler.handler(handler.envelope ? envelope : msg);
-						} catch (e) {
-							console.error("Error when executing the ", handler.name, " xmpp packet handler: ", e);
-						}
-					}, matchCount * 100); // Give some breathing room to the UI
+						}, matchCount * 100); // Give some breathing room to the UI
+					}
+				} catch (e) {
+					console.error("Error when executing the ", handler.name, " xmpp packet handler: ", e);
 				}
 			});
 		},
 
 		//HANDLERS 
+        // Not required anymore!
 
+        /*
 		messageHandler: function(msg){
 			//console.log("xmppSession::messageHandler() ",msg);
 			var mucInstance = this.isMucJid(msg.getAttribute("from"));
@@ -218,9 +233,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			
 		},
 		
-		/*
-		// Not required anymore!
-
 		iqHandler: function(msg){
 			//console.log("xmppSession::iqHandler()", msg);
 			if (msg.getAttribute('type')=="set"){
