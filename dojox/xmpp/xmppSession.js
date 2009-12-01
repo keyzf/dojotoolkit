@@ -87,20 +87,26 @@ dojox.xmpp.xmppSession = function(props){
 		return type
 	}
 	
-    this.registerPacketHandler("iq", "iq", dojo.hitch(this, "iqHandler"));
+    this.registerPacketHandler("iq", "iq[type='set']", dojo.hitch(this, "iqSetHandler"));
+	/*
+	this.registerPacketHandler("iq", "iq[type='get']", dojo.hitch(this, function() {
+		this.sendStanzaError('iq', this.domain, msg.getAttribute('from'), 'cancel', 'service-unavailable', 'service not implemented');
+	}));
+	*/
     
-    this.registerPacketHandler("presence", function(msg) {
-        return getNodeName(msg) === "presence";
-    }, dojo.hitch(this, "presenceHandler"));
+	this.registerPacketHandler("presence", function(msg) {
+		return getNodeName(msg) === "presence";
+	}, dojo.hitch(this, "presenceHandler"));
     
-    this.registerPacketHandler("message", function(msg) {
-        return getNodeName(msg) === "message";
-    }, dojo.hitch(this, "messageHandler"));
+	this.registerPacketHandler("message", function(msg) {
+		return getNodeName(msg) === "message";
+	}, dojo.hitch(this, "messageHandler"));
     
-    this.registerPacketHandler("features", function(msg) {
-        return getNodeName(msg) === "features";
-    }, dojo.hitch(this, "featuresHandler"));
-    
+	this.registerPacketHandler("features", function(msg){
+		// Unfortunately, dojo.query doesn't support namespaced element names in FF. Bummer. Getting the node name manually here.
+		return msg.nodeName.split(":").pop() === "features";
+	}, dojo.hitch(this, "featuresHandler"));
+
     this.registerPacketHandler("error", function(msg) {
         return getNodeName(msg) === "error";
     }, dojo.hitch(this, function() {
@@ -211,6 +217,9 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			}
 			
 		},
+		
+		/*
+		// Not required anymore!
 
 		iqHandler: function(msg){
 			//console.log("xmppSession::iqHandler()", msg);
@@ -222,6 +231,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				return;
 			}
 		},
+		*/
 
 		presenceHandler: function(msg){
 			//console.log("xmppSession::presenceHandler()", msg);
@@ -431,17 +441,24 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		isMucJid: function(jid){
 			var domain = dojox.xmpp.util.getDomainFromJid(jid);
+			return dojo.some(this.mucRegister, function(mucInstance){
+				return (mucInstance.domain === domain);
+			});
+		},
+		
+		getMucInstanceFromJid: function(jid){
+			var domain = dojox.xmpp.util.getDomainFromJid(jid);
 			var found = -1;
-			for(var i = 0; i < this.mucRegister.length; ++i){
+			for (var i = 0; i < this.mucRegister.length; ++i) {
 				var mucInstance = this.mucRegister[i];
-				if(mucInstance.domain === domain){
+				if (mucInstance.domain === domain) {
 					found = i;
 					break;
 				}
 			}
-			if(found > -1){
+			if (found > -1) {
 				return this.mucRegister[found];
-			}else{
+			} else {
 				return null;
 			}
 		},
