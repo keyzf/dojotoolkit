@@ -78,15 +78,6 @@ dojox.xmpp.xmppSession = function(props){
 	
 	// Register the packet handlers:
 	
-	function getNodeName(msg) {
-        var type = msg.nodeName;
-        var nsIndex = type.indexOf(":");
-        if(nsIndex > 0) {
-            type = type.substring(nsIndex+1);
-        }
-		return type
-	}
-	
     this.registerPacketHandler("iq", "iq[type='set']", dojo.hitch(this, "iqSetHandler"));
 	
 	/*
@@ -95,9 +86,7 @@ dojox.xmpp.xmppSession = function(props){
 	}));
 	*/
     
-	this.registerPacketHandler("presence", function(msg) {
-		return getNodeName(msg) === "presence";
-	}, dojo.hitch(this, "presenceHandler"));
+	this.registerPacketHandler("presence", "presence", dojo.hitch(this, "presenceHandler"));
     
 	this.registerPacketHandler("MucMessage", dojo.hitch(this, function(msg) {
 		return (msg.nodeName==="message") && this.isMucJid(msg.getAttribute("from")); 
@@ -121,7 +110,7 @@ dojox.xmpp.xmppSession = function(props){
 	}, dojo.hitch(this, "featuresHandler"));
 
     this.registerPacketHandler("error", function(msg) {
-        return getNodeName(msg) === "error";
+        return msg.nodeName === "error";
     }, dojo.hitch(this, function() {
         this.close();
     }));
@@ -129,6 +118,20 @@ dojox.xmpp.xmppSession = function(props){
     this.registerPacketHandler("sasl", function(msg) {
         return msg.getAttribute("xmlns") === dojox.xmpp.xmpp.SASL_NS;
     }, dojo.hitch(this, "saslHandler"));
+	
+	/*
+	try {
+		this.registerPacketHandler("saslSuccess", "success[xmlns='" + dojox.xmpp.xmpp.SASL_NS + "']", this.auth.onSuccess);
+		this.registerPacketHandler("saslChallenge", "challenge[xmlns='" + dojox.xmpp.xmpp.SASL_NS + "']", this.auth.onChallenge);
+		this.registerPacketHandler("saslFailure", "failure[xmlns='" + dojox.xmpp.xmpp.SASL_NS + "']", dojo.hitch(this, function(msg){
+			this.onLoginFailure(msg.firstChild.nodeName);
+			// TODO: Fix this - Rakesh
+			//this.session.setState('Terminate', msg.firstChild.nodeName);
+		}));
+	} catch(e) {
+		console.log(e);
+	}
+	*/
 };
 
 
@@ -168,18 +171,21 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		},
 
         registerPacketHandler: function(name, condition, handler, wrapInEnvelope) {
+			var newCondition;
 			if (dojo.isString(condition)) {
-				condition = function(msg){
+				newCondition = function(msg){
 					// Create the envelope when registering itself, rather than when handling the packet. Much faster.
-					var envelope = dojox.xml.parser.parse("<tmpEnvelope />").documentElement;
+					var envelope = dojox.xml.parser.parse("<tmpenvelope />").documentElement;
 					envelope.appendChild(msg.cloneNode(true));
 					return !!(dojo.query(condition, envelope).length);
 				};
+			} else {
+				newCondition = condition;
 			}
 			
 			return this._registeredPacketHandlers.push({
 				name: name,
-				condition: condition,
+				condition: newCondition,
 				handler: handler,
 				envelope: !!wrapInEnvelope
 			});
@@ -193,7 +199,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		handlePacket: function(msg){
 			//console.log("xmppSession::processProtocolResponse() ", msg, msg.nodeName);
-			var matchCount = 0, envelope = dojox.xml.parser.parse("<tmpEnvelope />").documentElement;
+			var matchCount = 0, envelope = dojox.xml.parser.parse("<tmpenvelope />").documentElement;
 			envelope.appendChild(msg.cloneNode(true));
 			
 			dojo.forEach(this._registeredPacketHandlers, function(handler){
@@ -247,7 +253,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		presenceHandler: function(msg){
 			//console.log("xmppSession::presenceHandler()", msg);
-			var mucInstance = this.isMucJid(msg.getAttribute("from"));
+			var mucInstance = this.getMucInstanceFromJid(msg.getAttribute("from"));
 			if(mucInstance){
 				mucInstance.handlePresence(msg);
 				return;
