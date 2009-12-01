@@ -34,23 +34,23 @@ dojo.declare("dojox.xmpp.SaxStreamReader", null, {
     },
 	
     _endElementHandler: function(nodeName) {
-		try {
-			this._saxBuffer.append("</", nodeName, ">");
-			this._saxDepth--;
-			if (this._saxDepth == 1) {
-				var serializedXml = this._saxBuffer.toString();
-				this._saxBuffer.clear();
-				console.info("RECD: ", serializedXml);
+		this._saxBuffer.append("</", nodeName, ">");
+		this._saxDepth--;
+		if (this._saxDepth == 1) {
+			var serializedXml = this._saxBuffer.toString();
+			this._saxBuffer.clear();
+			console.info("RECD: ", serializedXml);
+			setTimeout(dojo.hitch(this, function(){
 				this.onStanza(dojox.xml.parser.parse(serializedXml).documentElement);
+			}), 50);
+		} else {
+			if (this._saxDepth == 0) {
+				console.info("RECD: </" + nodeName + ">");
+				this._saxBuffer.clear();
+				this._saxDepth = 0;
+				this.onSessionEnd();
 			}
-			else 
-				if (this._saxDepth == 0) {
-					console.info("RECD: </" + nodeName + ">");
-					this._saxBuffer.clear();
-					this._saxDepth = 0;
-					this.onSessionEnd();
-				}
-		}catch(e) { alert(e);}
+		}
 	},
 	
 	_startElementConnectHandle: null,
