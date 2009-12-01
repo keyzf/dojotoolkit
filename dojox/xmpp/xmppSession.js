@@ -87,9 +87,7 @@ dojox.xmpp.xmppSession = function(props){
 		return type
 	}
 	
-    this.registerPacketHandler("iq", function(msg) {
-        return getNodeName(msg) === "iq";
-    }, dojo.hitch(this, "iqHandler"));
+    this.registerPacketHandler("iq", "iq", dojo.hitch(this, "iqHandler"));
     
     this.registerPacketHandler("presence", function(msg) {
         return getNodeName(msg) === "presence";
@@ -150,35 +148,47 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			this.session.close("unavailable");	
 		},
 
-        registerPacketHandler: function(name, condition, handler) {
+        registerPacketHandler: function(name, condition, handler, wrapInEnvelope) {
 			if (dojo.isString(condition)) {
-				condition = function(msg) {
-					return !!(dojo.query(condition, msg).length);
+				condition = function(msg){
+					// Create the envelope when registering itself, rather than when handling the packet. Much faster.
+					var envelope = dojox.xml.parser.parse("<tmpEnvelope />").documentElement;
+					envelope.appendChild(msg.cloneNode(true));
+					return !!(dojo.query(condition, envelope).length);
 				};
 			}
 			
-			this._registeredPacketHandlers.push({
+			return this._registeredPacketHandlers.push({
 				name: name,
 				condition: condition,
-				handler: handler
+				handler: handler,
+				envelope: !!wrapInEnvelope
 			});
         },
+		
+		unregisterPacketHandler: function(registerHandle) {
+			if(registerHandle-- && this._registeredPacketHandlers[registerHandle]) {
+                delete this._registeredPacketHandlers[registerHandle];
+			}
+		},
 
 		handlePacket: function(msg){
 			//console.log("xmppSession::processProtocolResponse() ", msg, msg.nodeName);
-			var matchCount = 0;
-            dojo.forEach(this._registeredPacketHandlers, function(handler) {
-                if(handler.condition(msg)) {
+			var matchCount = 0, envelope = dojox.xml.parser.parse("<tmpEnvelope />").documentElement;
+			envelope.appendChild(msg.cloneNode(true));
+			
+			dojo.forEach(this._registeredPacketHandlers, function(handler){
+				if (handler.condition(msg)) {
 					matchCount++;
-                    setTimeout(function() {
-                        try {
-                            handler.handler(msg);
-                        } catch(e) {
-                            console.error("Error when executing the ", handler.name, " xmpp packet handler: ", e);
-                        }
-                    }, matchCount*100);    // Give some breathing room to the UI
-                }
-            });
+					setTimeout(function(){
+						try {
+							handler.handler(handler.envelope ? envelope : msg);
+						} catch (e) {
+							console.error("Error when executing the ", handler.name, " xmpp packet handler: ", e);
+						}
+					}, matchCount * 100); // Give some breathing room to the UI
+				}
+			});
 		},
 
 		//HANDLERS 
