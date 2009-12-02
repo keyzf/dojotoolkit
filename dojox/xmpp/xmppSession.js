@@ -78,7 +78,16 @@ dojox.xmpp.xmppSession = function(props){
 	
 	// Register the packet handlers:
 	
-    this.registerPacketHandler("iq", "iq[type='set']", dojo.hitch(this, "iqSetHandler"));
+    this.registerPacketHandler("iq", "iq[type='set'] query[xmlns='jabber:iq:roster']", dojo.hitch(this, function(msg) {
+        this.rosterSetHandler(dojo.query("iq[type='set' query[xmlns='jabber:iq:roster']", msg)[0]);
+        this.sendIqResult(msg.getAttribute("id"), msg.getAttribute("from"));
+    }));
+	/*
+	// FIXME: This handler is in case iq[type="set"] was sent, without a query node.
+    this.registerPacketHandler("iq", "iq[type='set']", dojo.hitch(this, function(msg) {
+		this.sendStanzaError('iq', this.domain, msg.getAttribute('id'), 'cancel', 'service-unavailable', 'service not implemented');
+    }));
+	*/
 	
 	/*
 	this.registerPacketHandler("iq", "iq[type='get']", dojo.hitch(this, function() {
@@ -497,7 +506,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			this.mucRegister.push(mucInstance);
 			this.onRegisterMucInstance(mucInstance);
 		},
-
+        /*
 		iqSetHandler: function(msg){
 			if (msg.hasChildNodes()){
 				var fn = msg.firstChild;
@@ -514,6 +523,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				}
 			}
 		},
+		*/
 
 		sendIqResult: function(iqId, to){
 			var req = {
