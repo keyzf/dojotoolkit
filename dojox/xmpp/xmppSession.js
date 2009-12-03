@@ -82,12 +82,10 @@ dojox.xmpp.xmppSession = function(props){
         this.rosterSetHandler(dojo.query("iq[type='set' query[xmlns='jabber:iq:roster']", msg)[0]);
         this.sendIqResult(msg.getAttribute("id"), msg.getAttribute("from"));
     }));
-	/*
-	// FIXME: This handler is in case iq[type="set"] was sent, without a query node.
-    this.registerPacketHandler("iq", "iq[type='set']", dojo.hitch(this, function(msg) {
+	
+	this.registerPacketHandler("iq", "iq[type='set']:not(query)", dojo.hitch(this, function(msg) {
 		this.sendStanzaError('iq', this.domain, msg.getAttribute('id'), 'cancel', 'service-unavailable', 'service not implemented');
     }));
-	*/
 	
 	/*
 	this.registerPacketHandler("iq", "iq[type='get']", dojo.hitch(this, function() {
@@ -95,17 +93,18 @@ dojox.xmpp.xmppSession = function(props){
 	}));
 	*/
     
-	this.registerPacketHandler("presence", "presence", dojo.hitch(this, "presenceHandler"));
+    this.registerPacketHandler("presence", "presence x[xmlns^='http://jabber.org/protocol/muc']", dojo.hitch(this, function(msg) {
+        var mucInstance = this.getMucInstanceFromJid(msg.getAttribute("from"));
+        mucInstance.handlePresence(msg);
+    }));
     
-	this.registerPacketHandler("MucMessage", dojo.hitch(this, function(msg) {
-		return (msg.nodeName==="message") && this.isMucJid(msg.getAttribute("from")); 
-	}), dojo.hitch(this, function(msg) {
-		this.getMucInstanceFromJid(msg.getAttribute("from").handleMessage(msg));
+    this.registerPacketHandler("presence", "presence:not(x[xmlns='http://jabber.org/protocol/muc'])", dojo.hitch(this, "presenceHandler"));
+    
+	this.registerPacketHandler("MucMessage", "message[type='groupchat'], message x[xmlns^='http://jabber.org/protocol/muc']", dojo.hitch(this, function(msg) {
+		this.getMucInstanceFromJid(msg.getAttribute("from")).handleMessage(msg);
 	}));
     
-	this.registerPacketHandler("ChatMessage", dojo.hitch(this, function(msg) {
-		return (msg.nodeName==="message") && (!this.isMucJid(msg.getAttribute("from")) && (msg.getAttribute("type")==="chat")); 
-	}), dojo.hitch(this, "chatHandler"));
+	this.registerPacketHandler("ChatMessage", "message[type='chat'])", dojo.hitch(this, "chatHandler"));
     
 	/*
 	this.registerPacketHandler("SimpleMessage", dojo.hitch(this, function(msg) {
@@ -186,6 +185,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 					// Create the envelope when registering itself, rather than when handling the packet. Much faster.
 					var envelope = dojox.xml.parser.parse("<tmpenvelope />").documentElement;
 					envelope.appendChild(msg.cloneNode(true));
+					console.log(condition, dojo.query(condition, envelope), dojo.query(condition, envelope)[0]);
 					return !!(dojo.query(condition, envelope).length);
 				};
 			} else {
@@ -216,11 +216,15 @@ dojo.extend(dojox.xmpp.xmppSession, {
 					if (handler.condition(msg)) {
 						matchCount++;
 						setTimeout(function(){
-							handler.handler(handler.envelope ? envelope : msg);
+							try {
+                                handler.handler(handler.envelope ? envelope : msg);
+							} catch(e) {
+								console.error("Error when executing the ", handler.name, " xmpp packet handler: ", e);
+							}
 						}, matchCount * 100); // Give some breathing room to the UI
 					}
 				} catch (e) {
-					console.error("Error when executing the ", handler.name, " xmpp packet handler: ", e);
+					console.error("Error when executing the ", handler.name, " xmpp packet condition: ", e);
 				}
 			});
 		},
@@ -262,12 +266,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		presenceHandler: function(msg){
 			//console.log("xmppSession::presenceHandler()", msg);
-			var mucInstance = this.getMucInstanceFromJid(msg.getAttribute("from"));
-			if(mucInstance){
-				mucInstance.handlePresence(msg);
-				return;
-			}
-			
 			switch(msg.getAttribute('type')){
 				case 'subscribe':
 					//console.log("PresenceHandler: ", msg.getAttribute('from'));
