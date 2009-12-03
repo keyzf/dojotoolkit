@@ -2,13 +2,13 @@ dojo.provide("dojox.xmpp.xmppSession");
 
 //dojo.require("dojox.xmpp.TransportSession");
 dojo.require("dojox.xmpp.transportManager");
+dojo.require("dojox.xmpp.core.Auth");
 
 dojo.require("dojox.xmpp.RosterService");
 dojo.require("dojox.xmpp.PresenceService");
 dojo.require("dojox.xmpp.UserService");
 dojo.require("dojox.xmpp.ChatService");
 dojo.require("dojox.xmpp.MucService");
-dojo.require("dojox.xmpp.core.sasl");
 
 dojox.xmpp.xmpp = {
 	STREAM_NS:  'http://etherx.jabber.org/streams',
@@ -69,12 +69,14 @@ dojox.xmpp.xmppSession = function(props){
 		dojo.mixin(this, props);
 	}
 
-	this.session = dojox.xmpp.transportManager.getNewTransportInstance(props); 
-	dojo.connect(this.session, "onStreamReady", this, "onTransportReady");
-	dojo.connect(this.session, "onTerminate", this, "onTransportTerminate");
-	dojo.connect(this.session, "onXmppStanza", this, "handlePacket");
-	dojo.connect(this.session, "onConnectionReset", this, "onConnectionReset");
-	dojo.connect(this.session, "onUnableToCreateConnection", this,"onUnableToCreateConnection");
+	this._transport = dojox.xmpp.transportManager.getNewTransportInstance(props);
+    // Session is a horrible name. This is step 1 to rename it.
+	this.session = this._transport;
+	dojo.connect(this._transport, "onStreamReady", this, "onTransportReady");
+	dojo.connect(this._transport, "onTerminate", this, "onTransportTerminate");
+	dojo.connect(this._transport, "onXmppStanza", this, "handlePacket");
+	dojo.connect(this._transport, "onConnectionReset", this, "onConnectionReset");
+	dojo.connect(this._transport, "onUnableToCreateConnection", this,"onUnableToCreateConnection");
 	
 	// Register the packet handlers:
 	
@@ -144,15 +146,6 @@ dojox.xmpp.xmppSession = function(props){
 	});
 	*/
     
-	this.registerPacketHandler({
-		name: "features",
-		condition: function(msg){
-			// Unfortunately, dojo.query doesn't support namespaced element names in FF. Bummer. Getting the node name manually here.
-			return msg.nodeName.split(":").pop() === "features";
-		},
-		handler: dojo.hitch(this, "featuresHandler")
-	})
-
     this.registerPacketHandler({
 		name: "error",
 		condition: function(msg){
@@ -163,14 +156,6 @@ dojox.xmpp.xmppSession = function(props){
 		})
     });
     
-    this.registerPacketHandler({
-		name: "sasl",
-		condition: function(msg){
-			return msg.getAttribute("xmlns") === dojox.xmpp.xmpp.SASL_NS;
-		},
-		handler: dojo.hitch(this, "saslHandler")
-	});
-	
 	/*
 	try {
 		this.registerPacketHandler("saslSuccess", "success[xmlns='" + dojox.xmpp.xmpp.SASL_NS + "']", this.auth.onSuccess);
@@ -178,7 +163,7 @@ dojox.xmpp.xmppSession = function(props){
 		this.registerPacketHandler("saslFailure", "failure[xmlns='" + dojox.xmpp.xmpp.SASL_NS + "']", dojo.hitch(this, function(msg){
 			this.onLoginFailure(msg.firstChild.nodeName);
 			// TODO: Fix this - Rakesh
-			//this.session.setState('Terminate', msg.firstChild.nodeName);
+			//this._transport.setState('Terminate', msg.firstChild.nodeName);
 		}));
 	} catch(e) {
 		console.log(e);
@@ -193,33 +178,13 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		_iqId: 0,
 	
 		open: function(user, password, resource){
-
-			if (!user) {
-				throw new Error("User id cannot be null");
-			} else {
-				this.jid = user;
-				if(user.indexOf('@') == -1) {
-					this.jid = this.jid + '@' + this.domain;
-				}
-        	}
-
-			//allow null password here as its not needed in the SSO case
-			if (password) {
-				this.password = password;
-			}
-
-			//normally you should NOT supply a resource and let the server send you one
-			//as part of your jid...see onBindResource()
-			if (resource) {
-				this.resource = resource;
-			}
-
-			this.session.open();
+			new dojox.xmpp.core.Auth(this, user, password, resource);
+			this._transport.open();
 		},
 
 		close: function(){
 			this.state = dojox.xmpp.xmpp.TERMINATE;
-			this.session.close("unavailable");	
+			this._transport.close("unavailable");	
 		},
 
         registerPacketHandler: function(handlerInformation) {
@@ -324,72 +289,8 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			}
 		},
 
-		featuresHandler: function(msg){
-			//console.log("xmppSession::featuresHandler() ",msg);
-			var authMechanisms = [];
-			var hasBindFeature = false;
-			var hasSessionFeature = false;
-
-			if(msg.hasChildNodes()){
-				for(var i=0; i<msg.childNodes.length;i++){
-					var n = msg.childNodes[i];
-					//console.log("featuresHandler::node", n);
-					switch(n.nodeName){
-						case 'mechanisms':
-							for (var x=0; x<n.childNodes.length; x++){
-								//console.log("featuresHandler::node::mechanisms", n.childNodes[x].firstChild.nodeValue);
-								authMechanisms.push(n.childNodes[x].firstChild.nodeValue);
-							}
-							break;
-						case 'bind':
-							//if (n.getAttribute('xmlns')==dojox.xmpp.xmpp.BIND_NS) {
-							hasBindFeature = true;
-						//	}
-							break;
-						case 'session':
-							hasSessionFeature = true;
-					}	
-				}
-			}
-			//console.log("Has connected/bind?", this.state, hasBindFeature, authMechanisms);
-			if(this.state == dojox.xmpp.xmpp.CONNECTED){
-				if(!this.auth){
-					// start the login
-					for(var i=0; i<authMechanisms.length; i++){
-						try{
-							this.auth = dojox.xmpp.core.sasl.registry.match(authMechanisms[i], this);
-							break;
-						}catch(e){
-							console.warn("No suitable auth mechanism found for: ", authMechanisms[i], e);
-						}
-					}
-				}else if(hasBindFeature){
-					this.bindResource(hasSessionFeature);
-				}
-			}
-		},
-
-		saslHandler: function(msg){
-			//console.log("xmppSession::saslHandler() ", msg);
-			if(msg.nodeName=="success"){
-				this.auth.onSuccess();
-				return;
-			}
-
-			if(msg.nodeName=="challenge"){
-				this.auth.onChallenge(msg);
-				return;
-			}
-
-			if(msg.hasChildNodes()){
-				this.onLoginFailure(msg.firstChild.nodeName);
-				// TODO: Fix this - Rakesh
-				//this.session.setState('Terminate', msg.firstChild.nodeName);
-			}
-		},
-
 		sendRestart: function(){
-			this.session.restartStream();
+			this._transport.restartStream();
 		},
 
 
@@ -772,29 +673,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			return re;
 		},
 
-		bindResource: function(hasSession){
-			var props = {
-				id: this.getNextIqId(),
-				type: "set"
-			}
-			var bindReq = new dojox.string.Builder(dojox.xmpp.util.createElement("iq", props, false));
-			bindReq.append(dojox.xmpp.util.createElement("bind", {xmlns: dojox.xmpp.xmpp.BIND_NS}, false));
-
-			if (this.resource){
-				bindReq.append(dojox.xmpp.util.createElement("resource"));
-				bindReq.append(this.resource);
-				bindReq.append("</resource>");
-			}
-
-			bindReq.append("</bind></iq>");
-
-			var def = this.dispatchPacket(bindReq, "iq", props.id);
-			def.addCallback(this, function(msg){
-				this.onBindResource(msg, hasSession);
-				return msg;
-			});
-		},
-
 		getNextIqId: function(){
 			return "im_" + this._iqId++;
 		},
@@ -814,7 +692,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		dispatchPacket: function(msg, type, matchId){
 			if (this.state != "Terminate") {
-				return this.session.dispatchPacket(msg,type,matchId);
+				return this._transport.dispatchPacket(msg,type,matchId);
 			}else{
 				//console.log("xmppSession::dispatchPacket - Session in Terminate state, dropping packet");
 			}
@@ -866,56 +744,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		onLoginFailure: function(msg){
 			//console.log("xmppSession::onLoginFailure ", msg);
-		},
-
-		onBindResource: function(msg, hasSession){
-			//console.log("xmppSession::onBindResource() ", msg);
-		
-			if (msg.getAttribute('type')=='result'){
-				//console.log("xmppSession::onBindResource() Got Result Message");
-				if ((msg.hasChildNodes()) && (msg.firstChild.nodeName=="bind")){
-					var bindTag = msg.firstChild;
-					if ((bindTag.hasChildNodes()) && (bindTag.firstChild.nodeName=="jid")){
-						if (bindTag.firstChild.hasChildNodes()){
-							var fulljid = bindTag.firstChild.firstChild.nodeValue;
-							this.jid = this.getBareJid(fulljid);
-							this.resource = this.getResourceFromJid(fulljid);
-						}
-					}
-					if(hasSession){
-						var props = {
-							id: this.getNextIqId(),
-							type: "set"
-						}
-						var bindReq = new dojox.string.Builder(dojox.xmpp.util.createElement("iq", props, false));
-						bindReq.append(dojox.xmpp.util.createElement("session", {xmlns: dojox.xmpp.xmpp.SESSION_NS}, true));
-						bindReq.append("</iq>");
-
-						var def = this.dispatchPacket(bindReq, "iq", props.id);
-						def.addCallback(this, "onBindSession");
-						return;
-					}
-				}else{
-					//console.log("xmppService::onBindResource() No Bind Element Found");
-				}
-
-				this.onLogin();
-		
-			}else if(msg.getAttribute('type')=='error'){
-				//console.log("xmppSession::onBindResource() Bind Error ", msg);
-				var err = this.processXmppError(msg);
-				this.onLoginFailure(err);
-			}
-		},
-
-		onBindSession: function(msg){
-			if(msg.getAttribute('type')=='error'){
-				//console.log("xmppSession::onBindSession() Bind Error ", msg);
-				var err = this.processXmppError(msg);
-				this.onLoginFailure(err);
-			}else{
-				this.onLogin();
-			}
 		},
 
 		onSearchResults: function(results){
