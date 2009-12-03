@@ -8,7 +8,7 @@ dojo.require("dojox.xmpp.PresenceService");
 dojo.require("dojox.xmpp.UserService");
 dojo.require("dojox.xmpp.ChatService");
 dojo.require("dojox.xmpp.MucService");
-dojo.require("dojox.xmpp.sasl");
+dojo.require("dojox.xmpp.core.sasl");
 
 dojox.xmpp.xmpp = {
 	STREAM_NS:  'http://etherx.jabber.org/streams',
@@ -78,54 +78,98 @@ dojox.xmpp.xmppSession = function(props){
 	
 	// Register the packet handlers:
 	
-    this.registerPacketHandler("iq", "iq[type='set'] query[xmlns='jabber:iq:roster']", dojo.hitch(this, function(msg) {
-        this.rosterSetHandler(dojo.query("iq[type='set' query[xmlns='jabber:iq:roster']", msg)[0]);
-        this.sendIqResult(msg.getAttribute("id"), msg.getAttribute("from"));
-    }));
+    this.registerPacketHandler({
+		name: "iq",
+		condition: "iq[type='set'] query[xmlns='jabber:iq:roster']",
+		handler: dojo.hitch(this, function(msg) {
+	        this.rosterSetHandler(dojo.query("iq[type='set' query[xmlns='jabber:iq:roster']", msg)[0]);
+	        this.sendIqResult(msg.getAttribute("id"), msg.getAttribute("from"));
+		})
+    });
 	
-	this.registerPacketHandler("iq", "iq[type='set']:not(query)", dojo.hitch(this, function(msg) {
-		this.sendStanzaError('iq', this.domain, msg.getAttribute('id'), 'cancel', 'service-unavailable', 'service not implemented');
-    }));
+	this.registerPacketHandler({
+		name: "iq",
+		condition: "iq[type='set']:not(query)",
+		handler: dojo.hitch(this, function(msg) {
+    		this.sendStanzaError('iq', this.domain, msg.getAttribute('id'), 'cancel', 'service-unavailable', 'service not implemented');
+		})
+    });
 	
 	/*
-	this.registerPacketHandler("iq", "iq[type='get']", dojo.hitch(this, function() {
-		this.sendStanzaError('iq', this.domain, msg.getAttribute('from'), 'cancel', 'service-unavailable', 'service not implemented');
-	}));
+	this.registerPacketHandler({
+		name: "iq",
+		condition: "iq[type='get']",
+		handler: dojo.hitch(this, function() {
+			this.sendStanzaError('iq', this.domain, msg.getAttribute('from'), 'cancel', 'service-unavailable', 'service not implemented');
+		})
+	});
 	*/
     
-    this.registerPacketHandler("presence", "presence x[xmlns^='http://jabber.org/protocol/muc']", dojo.hitch(this, function(msg) {
-        var mucInstance = this.getMucInstanceFromJid(msg.getAttribute("from"));
-        mucInstance.handlePresence(msg);
-    }));
+    this.registerPacketHandler({
+		name: "MucPresence",
+		condition: "presence x[xmlns^='http://jabber.org/protocol/muc']",
+		handler: dojo.hitch(this, function(msg) {
+	        var mucInstance = this.getMucInstanceFromJid(msg.getAttribute("from"));
+	        mucInstance.handlePresence(msg);
+		})
+    });
     
-    this.registerPacketHandler("presence", "presence:not(x[xmlns='http://jabber.org/protocol/muc'])", dojo.hitch(this, "presenceHandler"));
+    this.registerPacketHandler({
+		name: "ChatPresence",
+		condition: "presence:not(x[xmlns='http://jabber.org/protocol/muc'])",
+		handler: dojo.hitch(this, "presenceHandler")
+	});
     
-	this.registerPacketHandler("MucMessage", "message[type='groupchat'], message x[xmlns^='http://jabber.org/protocol/muc']", dojo.hitch(this, function(msg) {
-		this.getMucInstanceFromJid(msg.getAttribute("from")).handleMessage(msg);
-	}));
+	this.registerPacketHandler({
+		name: "MucMessage",
+		condition: "message[type='groupchat'], message x[xmlns^='http://jabber.org/protocol/muc']",
+		handler: dojo.hitch(this, function(msg){
+			this.getMucInstanceFromJid(msg.getAttribute("from")).handleMessage(msg);
+		})
+	});
     
-	this.registerPacketHandler("ChatMessage", "message[type='chat'])", dojo.hitch(this, "chatHandler"));
+	this.registerPacketHandler({
+		name: "ChatMessage",
+		condition: "message[type='chat'])",
+		handler: dojo.hitch(this, "chatHandler")
+	});
     
 	/*
-	this.registerPacketHandler("SimpleMessage", dojo.hitch(this, function(msg) {
-		return (msg.nodeName==="message") && (!this.isMucJid(msg.getAttribute("from")) && (msg.getAttribute("type")==="normal")); 
-	}), dojo.hitch(this, "simpleMessageHandler"));
+	this.registerPacketHandler({
+		name: "SimpleMessage",
+		condition: dojo.hitch(this, function(msg) {
+			return (msg.nodeName==="message") && (!this.isMucJid(msg.getAttribute("from")) && (msg.getAttribute("type")==="normal"));
+		}),
+		handler: dojo.hitch(this, "simpleMessageHandler")
+	});
 	*/
     
-	this.registerPacketHandler("features", function(msg){
-		// Unfortunately, dojo.query doesn't support namespaced element names in FF. Bummer. Getting the node name manually here.
-		return msg.nodeName.split(":").pop() === "features";
-	}, dojo.hitch(this, "featuresHandler"));
+	this.registerPacketHandler({
+		name: "features",
+		condition: function(msg){
+			// Unfortunately, dojo.query doesn't support namespaced element names in FF. Bummer. Getting the node name manually here.
+			return msg.nodeName.split(":").pop() === "features";
+		},
+		handler: dojo.hitch(this, "featuresHandler")
+	})
 
-    this.registerPacketHandler("error", function(msg) {
-        return msg.nodeName === "error";
-    }, dojo.hitch(this, function() {
-        this.close();
-    }));
+    this.registerPacketHandler({
+		name: "error",
+		condition: function(msg){
+			return msg.nodeName === "error";
+		},
+		handler: dojo.hitch(this, function() {
+			this.close();
+		})
+    });
     
-    this.registerPacketHandler("sasl", function(msg) {
-        return msg.getAttribute("xmlns") === dojox.xmpp.xmpp.SASL_NS;
-    }, dojo.hitch(this, "saslHandler"));
+    this.registerPacketHandler({
+		name: "sasl",
+		condition: function(msg){
+			return msg.getAttribute("xmlns") === dojox.xmpp.xmpp.SASL_NS;
+		},
+		handler: dojo.hitch(this, "saslHandler")
+	});
 	
 	/*
 	try {
@@ -178,26 +222,22 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			this.session.close("unavailable");	
 		},
 
-        registerPacketHandler: function(name, condition, handler, wrapInEnvelope) {
+        registerPacketHandler: function(handlerInformation) {
 			var newCondition;
-			if (dojo.isString(condition)) {
+			if (dojo.isString(handlerInformation.condition)) {
 				newCondition = function(msg){
 					// Create the envelope when registering itself, rather than when handling the packet. Much faster.
 					var envelope = dojox.xml.parser.parse("<tmpenvelope />").documentElement;
 					envelope.appendChild(msg.cloneNode(true));
-					console.log(condition, dojo.query(condition, envelope), dojo.query(condition, envelope)[0]);
-					return !!(dojo.query(condition, envelope).length);
+					return !!(dojo.query(handlerInformation.condition, envelope).length);
 				};
 			} else {
-				newCondition = condition;
+				newCondition = handlerInformation.condition;
 			}
 			
-			return this._registeredPacketHandlers.push({
-				name: name,
-				condition: newCondition,
-				handler: handler,
-				envelope: !!wrapInEnvelope
-			});
+			handlerInformation.execCondition = newCondition;
+			
+			return this._registeredPacketHandlers.push(handlerInformation);
         },
 		
 		unregisterPacketHandler: function(registerHandle) {
@@ -211,20 +251,20 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			var matchCount = 0, envelope = dojox.xml.parser.parse("<tmpenvelope />").documentElement;
 			envelope.appendChild(msg.cloneNode(true));
 			
-			dojo.forEach(this._registeredPacketHandlers, function(handler){
+			dojo.forEach(this._registeredPacketHandlers, function(handlerInformation){
 				try {
-					if (handler.condition(msg)) {
+					if (handlerInformation.execCondition(msg)) {
 						matchCount++;
 						setTimeout(function(){
 							try {
-                                handler.handler(handler.envelope ? envelope : msg);
+                                handlerInformation.handler(handlerInformation.envelope ? envelope : msg);
 							} catch(e) {
-								console.error("Error when executing the ", handler.name, " xmpp packet handler: ", e);
+								console.error("Error when executing the ", handlerInformation.name, " xmpp packet handler: ", e);
 							}
 						}, matchCount * 100); // Give some breathing room to the UI
 					}
 				} catch (e) {
-					console.error("Error when executing the ", handler.name, " xmpp packet condition: ", e);
+					console.error("Error when executing the ", handlerInformation.name, " xmpp packet condition: ", e);
 				}
 			});
 		},
@@ -317,10 +357,10 @@ dojo.extend(dojox.xmpp.xmppSession, {
 					// start the login
 					for(var i=0; i<authMechanisms.length; i++){
 						try{
-							this.auth = dojox.xmpp.sasl.registry.match(authMechanisms[i], this);
+							this.auth = dojox.xmpp.core.sasl.registry.match(authMechanisms[i], this);
 							break;
 						}catch(e){
-							console.warn("No suitable auth mechanism found for: ", authMechanisms[i]);
+							console.warn("No suitable auth mechanism found for: ", authMechanisms[i], e);
 						}
 					}
 				}else if(hasBindFeature){
