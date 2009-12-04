@@ -132,6 +132,9 @@ dojox.xmpp.util.htmlToPlain = function(str){
 dojox.xmpp.util.Base64 = {};
 
 dojox.xmpp.util.Base64.encode = function(input){
+	if(window.btoa) {
+		return window.btoa(input);
+	}
 	var s2b = function(s){
 		var b = [];
 		for(var i = 0; i < s.length; ++i){
@@ -144,6 +147,9 @@ dojox.xmpp.util.Base64.encode = function(input){
 
 
 dojox.xmpp.util.Base64.decode = function(input){
+	if(window.atob) {
+		return window.atob(input);
+	}
 	var b2s = function(b){
 		var s = [];
 		dojo.forEach(b, function(c){ s.push(String.fromCharCode(c)); });
@@ -196,3 +202,11 @@ dojox.xmpp.util.parseLegacyTimestamp = function(str){
     return result;
 }
 dojox.xmpp.util.parseLegacyTimestamp.regex = /^(\d{4})(\d{2})(\d{2})T(\d{2}):(\d{2}):(\d{2})$/;
+
+dojox.xmpp.util.isErrorNode = function(msg) {
+    if(msg.getAttribute('type')=='error'){
+        var err = this.processXmppError(msg);
+    }else{
+        this.onLogin();
+    }
+}
