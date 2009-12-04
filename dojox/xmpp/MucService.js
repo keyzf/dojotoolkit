@@ -593,7 +593,6 @@ dojo.declare("dojox.xmpp.MucService", null, {
     },
 
     handleMessage: function(msg){
-        console.log("handleMessage called", msg);
         var from = msg.getAttribute("from");
         var roomId = dojox.xmpp.util.getNodeFromJid(from);
         var room = this.getRoom(roomId);
@@ -601,7 +600,6 @@ dojo.declare("dojox.xmpp.MucService", null, {
     },
 
     handlePresence: function(msg){
-        console.log("handlePresence called", msg);
         var from = msg.getAttribute("from");
         var roomId = dojox.xmpp.util.getNodeFromJid(from);
         var room = this.getRoom(roomId);
