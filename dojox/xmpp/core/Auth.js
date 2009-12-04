@@ -31,44 +31,40 @@ dojo.declare("dojox.xmpp.core.Auth", null, {
 			this._resource = session.resource = resource;
 		}
 		
-		this._registerPacketListeners(0);
+        this._featuresHandlerHandle = session.registerPacketHandler({
+            name: "features",
+            condition: function(msg){
+                // Unfortunately, dojo.query doesn't support namespaced element names in FF. Bummer. Getting the node name manually here.
+                return msg.nodeName.split(":").pop() === "features";
+            },
+            handler: dojo.hitch(this, this._readFeatures)
+        });
 	},
 	
-	_registerPacketListeners: function(stage) {
+	_registerAuthPacketHandlers: function() {
 		var session = this._session;
 		
-		if(!stage) {
-            this._featuresHandlerHandle = session.registerPacketHandler({
-                name: "features",
-                condition: function(msg){
-                    // Unfortunately, dojo.query doesn't support namespaced element names in FF. Bummer. Getting the node name manually here.
-                    return msg.nodeName.split(":").pop() === "features";
-                },
-                handler: dojo.hitch(this, this._readFeatures)
-            });
-		} else {
-            var saslXmlns = "";//"[xmlns='" + this._SASL_NS + "']";
-            
-			this._saslSuccessHandle = session.registerPacketHandler({
-                name: "sasl::onSuccess",
-                condition: "success" + saslXmlns,
-                handler: dojo.hitch(this._chosenAuthMechanism, "onSuccess")
-            });
-            
-            this._saslChallengeHandle = session.registerPacketHandler({
-                name: "sasl::onChallenge",
-                condition: "challenge" + saslXmlns,
-                handler: dojo.hitch(this._chosenAuthMechanism, "onChallenge")
-            });
+        var saslXmlns = "";//"[xmlns='" + this._SASL_NS + "']";
+        
+		this._saslSuccessHandle = session.registerPacketHandler({
+            name: "sasl::onSuccess",
+            condition: "success" + saslXmlns,
+            handler: dojo.hitch(this._chosenAuthMechanism, "onSuccess")
+        });
+        
+        this._saslChallengeHandle = session.registerPacketHandler({
+            name: "sasl::onChallenge",
+            condition: "challenge" + saslXmlns,
+            handler: dojo.hitch(this._chosenAuthMechanism, "onChallenge")
+        });
 
-            this._saslFailureHandle = session.registerPacketHandler({
-                name: "sasl::onFailure",
-                condition: "failure" + saslXmlns,
-                handler: function(msg) {
-                    session.onLoginFailure(msg.firstChild.nodeName);
-                }
-            });
-		}
+        this._saslFailureHandle = session.registerPacketHandler({
+            name: "sasl::onFailure",
+            condition: "failure" + saslXmlns,
+            handler: function(msg) {
+                session.onLoginFailure(msg.firstChild.nodeName);
+            }
+        });
 	},
     
 	_readFeatures: function(msg){
@@ -86,7 +82,7 @@ dojo.declare("dojox.xmpp.core.Auth", null, {
 					console.warn("No suitable auth mechanism found for: ", authMechanisms[i]);
 				}
 			}
-            this._registerPacketListeners(1);
+            this._registerAuthPacketHandlers();
 		} else {
 			// Auth is done. Do bind if necessary.
 			var bindXmlns = "";//"[xmlns='" + this._BIND_NS + "']";

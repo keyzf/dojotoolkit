@@ -57,8 +57,7 @@ dojo.declare("dojox.xmpp.core._sasl.Plain", dojox.xmpp.core._sasl._Base, {
 		var token = this.session.jid + '\u0000' + id + '\u0000' + this.session.password;
 		token = dojox.xmpp.util.Base64.encode(token);
 
-		auth.append(token);
-		auth.append("</auth>");
+		auth.append(token, "</auth>");
 
 		delete this.session.password;
 	}
@@ -129,10 +128,9 @@ dojo.declare("dojox.xmpp.core._sasl.DigestMD5", dojox.xmpp.core._sasl._Base, {
 			'response="', HEX(response_value.toString() + HEX(A2)), '",charset="utf-8"');
 
 		var response = new dojox.string.Builder(dojox.xmpp.util.createElement("response", {
-			xmlns: dojox.xmpp.xmpp.SASL_NS
+			xmlns: dojox.xmpp.core._sasl.saslNS
 		}, false));
-		response.append(dojox.xmpp.util.Base64.encode(ret.toString()));
-		response.append('</response>');
+		response.append(dojox.xmpp.util.Base64.encode(ret.toString()), "</response>");
 
 		this.rspauth = HEX(response_value.toString() + HEX(A2_rspauth));
 
@@ -144,7 +142,7 @@ dojo.declare("dojox.xmpp.core._sasl.DigestMD5", dojox.xmpp.core._sasl._Base, {
 
 		if(this.rspauth == ch_str.substring(8)){
 			var response = new dojox.string.Builder(dojox.xmpp.util.createElement("response", {
-				xmlns: dojox.xmpp.xmpp.SASL_NS
+				xmlns: dojox.xmpp.core._sasl.saslNS
 			}, true));
 			this.session.dispatchPacket(response.toString());
 		}else{
