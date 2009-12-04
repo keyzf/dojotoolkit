@@ -14,9 +14,6 @@ dojox.xmpp.xmpp = {
 	STREAM_NS:  'http://etherx.jabber.org/streams',
 	CLIENT_NS: 'jabber:client',
 	STANZA_NS: 'urn:ietf:params:xml:ns:xmpp-stanzas',
-	SASL_NS: 'urn:ietf:params:xml:ns:xmpp-sasl',
-	BIND_NS: 'urn:ietf:params:xml:ns:xmpp-bind',
-	SESSION_NS: 'urn:ietf:params:xml:ns:xmpp-session',
 	BODY_NS: "http://jabber.org/protocol/httpbind",
 
 	LEGACY_DELAYED_DELIVERY_NS: "jabber:x:delay",
@@ -155,20 +152,6 @@ dojox.xmpp.xmppSession = function(props){
 			this.close();
 		})
     });
-    
-	/*
-	try {
-		this.registerPacketHandler("saslSuccess", "success[xmlns='" + dojox.xmpp.xmpp.SASL_NS + "']", this.auth.onSuccess);
-		this.registerPacketHandler("saslChallenge", "challenge[xmlns='" + dojox.xmpp.xmpp.SASL_NS + "']", this.auth.onChallenge);
-		this.registerPacketHandler("saslFailure", "failure[xmlns='" + dojox.xmpp.xmpp.SASL_NS + "']", dojo.hitch(this, function(msg){
-			this.onLoginFailure(msg.firstChild.nodeName);
-			// TODO: Fix this - Rakesh
-			//this._transport.setState('Terminate', msg.firstChild.nodeName);
-		}));
-	} catch(e) {
-		console.log(e);
-	}
-	*/
 };
 
 
