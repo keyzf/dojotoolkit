@@ -184,13 +184,13 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			}
 			
 			handlerInformation.execCondition = newCondition;
-			
-			return this._registeredPacketHandlers.push(handlerInformation);
+			var newLength = this._registeredPacketHandlers.push(handlerInformation); 
+			return --newLength;
         },
 		
 		unregisterPacketHandler: function(registerHandle) {
-			if(registerHandle-- && this._registeredPacketHandlers[registerHandle]) {
-                delete this._registeredPacketHandlers[registerHandle];
+			if(registerHandle && this._registeredPacketHandlers[registerHandle]) {
+                this._registeredPacketHandlers[registerHandle] = null;
 			}
 		},
 
@@ -200,6 +200,9 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			envelope.appendChild(msg.cloneNode(true));
 			
 			dojo.forEach(this._registeredPacketHandlers, function(handlerInformation){
+                if(!handlerInformation) {
+					return;
+				}
 				try {
 					if (handlerInformation.execCondition(msg)) {
 						matchCount++;
@@ -599,7 +602,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 			var def = this.dispatchPacket(req,"iq", props.id);
 			def.addCallback(this, "onRetrieveRoster");
-			
 		},
 
 		getRosterIndex: function(jid){
@@ -721,7 +723,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		// EVENTS
 
 		onLogin: function(){ 
-			////console.log("xmppSession::onLogin()"); 
+			////console.log("xmppSession::onLogin()");
 			this.retrieveRoster();
 		},
 
@@ -735,7 +737,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		onRetrieveRoster: function(msg){
 			////console.log("xmppService::onRetrieveRoster() ", arguments);
-
 			if ((msg.getAttribute('type')=='result') && msg.hasChildNodes()){
 				var query = msg.getElementsByTagName('query')[0];
 				if (query.getAttribute('xmlns')=="jabber:iq:roster"){
