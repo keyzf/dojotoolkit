@@ -1,6 +1,6 @@
 dojo.provide("dojox.xmpp.core.Auth");
 
-dojo.require("dojox.xmpp.core.sasl");
+dojo.require("dojox.xmpp.core._sasl");
 dojo.require("dojox.xmpp.util");
 
 dojo.declare("dojox.xmpp.core.Auth", null, {
@@ -80,7 +80,7 @@ dojo.declare("dojox.xmpp.core.Auth", null, {
 			// start the login
 			for(var i = 0; i < authMechanisms.length; i++) {
 				try {
-					this._chosenAuthMechanism = dojox.xmpp.core.sasl.registry.match(authMechanisms[i], this._session);
+					this._chosenAuthMechanism = dojox.xmpp.core._sasl.registry.match(authMechanisms[i], this._session);
 					break;
 				} catch (e) {
 					console.warn("No suitable auth mechanism found for: ", authMechanisms[i]);

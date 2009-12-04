@@ -1,12 +1,12 @@
-dojo.provide("dojox.xmpp.core.sasl");
+dojo.provide("dojox.xmpp.core._sasl");
 dojo.require("dojox.xmpp.util");
 
 dojo.require("dojo.AdapterRegistry");
 dojo.require("dojox.encoding.digests.MD5");
 
-dojox.xmpp.core.sasl.saslNS = "urn:ietf:params:xml:ns:xmpp-sasl";
+dojox.xmpp.core._sasl.saslNS = "urn:ietf:params:xml:ns:xmpp-sasl";
 
-dojo.declare("dojox.xmpp.core.sasl._Base", null, {
+dojo.declare("dojox.xmpp.core._sasl._Base", null, {
 	mechanism: null,
 	closeAuthTag: true,
 
@@ -17,7 +17,7 @@ dojo.declare("dojox.xmpp.core.sasl._Base", null, {
 	},
 	startAuth: function(){
 		var auth = new dojox.string.Builder(dojox.xmpp.util.createElement("auth", {
-			xmlns: dojox.xmpp.core.sasl.saslNS,
+			xmlns: dojox.xmpp.core._sasl.saslNS,
 			mechanism: this.mechanism
 		}, this.closeAuthTag));
 		this.appendToAuth(auth);
@@ -39,11 +39,11 @@ dojo.declare("dojox.xmpp.core.sasl._Base", null, {
 	}
 });
 
-dojo.declare("dojox.xmpp.core.sasl.SunWebClientAuth", dojox.xmpp.core.sasl._Base, {
+dojo.declare("dojox.xmpp.core._sasl.SunWebClientAuth", dojox.xmpp.core._sasl._Base, {
 	mechanism: "SUN-COMMS-CLIENT-PROXY-AUTH"
 });
 
-dojo.declare("dojox.xmpp.core.sasl.Plain", dojox.xmpp.core.sasl._Base, {
+dojo.declare("dojox.xmpp.core._sasl.Plain", dojox.xmpp.core._sasl._Base, {
 	mechanism: "PLAIN",
 	closeAuthTag: false,
 
@@ -64,7 +64,7 @@ dojo.declare("dojox.xmpp.core.sasl.Plain", dojox.xmpp.core.sasl._Base, {
 	}
 });
 
-dojo.declare("dojox.xmpp.core.sasl.DigestMD5", dojox.xmpp.core.sasl._Base, {
+dojo.declare("dojox.xmpp.core._sasl.DigestMD5", dojox.xmpp.core._sasl._Base, {
 	mechanism: "DIGEST-MD5",
 
 	onFirstChallenge: function(msg){
@@ -153,31 +153,31 @@ dojo.declare("dojox.xmpp.core.sasl.DigestMD5", dojox.xmpp.core.sasl._Base, {
 	}
 });
 
-dojox.xmpp.core.sasl.registry = new dojo.AdapterRegistry();
-dojox.xmpp.core.sasl.registry.register(
+dojox.xmpp.core._sasl.registry = new dojo.AdapterRegistry();
+dojox.xmpp.core._sasl.registry.register(
 	'SUN-COMMS-CLIENT-PROXY-AUTH',
 	function(mechanism){
 		return mechanism == 'SUN-COMMS-CLIENT-PROXY-AUTH';
 	},
 	function(mechanism, session){
-		return new dojox.xmpp.core.sasl.SunWebClientAuth(session);
+		return new dojox.xmpp.core._sasl.SunWebClientAuth(session);
 	}
 );
-dojox.xmpp.core.sasl.registry.register(
+dojox.xmpp.core._sasl.registry.register(
 	'DIGEST-MD5',
 	function(mechanism){
 		return mechanism == 'DIGEST-MD5';
 	},
 	function(mechanism, session){
-		return new dojox.xmpp.core.sasl.DigestMD5(session);
+		return new dojox.xmpp.core._sasl.DigestMD5(session);
 	}
 );
-dojox.xmpp.core.sasl.registry.register(
+dojox.xmpp.core._sasl.registry.register(
 	'PLAIN',
 	function(mechanism){
 		return mechanism == 'PLAIN';
 	},
 	function(mechanism, session){
-		return new dojox.xmpp.core.sasl.Plain(session);
+		return new dojox.xmpp.core._sasl.Plain(session);
 	}
 );
