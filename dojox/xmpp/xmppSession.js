@@ -3,6 +3,7 @@ dojo.provide("dojox.xmpp.xmppSession");
 //dojo.require("dojox.xmpp.TransportSession");
 dojo.require("dojox.xmpp.transportManager");
 dojo.require("dojox.xmpp.core.Auth");
+dojo.require("dojox.xmpp.im.RosterStore");
 
 dojo.require("dojox.xmpp.RosterService");
 dojo.require("dojox.xmpp.PresenceService");
@@ -296,7 +297,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				//console.log("chat child node ", msg.childNodes, msg.childNodes.length);
 			for (var i=0; i<msg.childNodes.length; i++){
 				var n = msg.childNodes[i];
-				console.log(n.nodeName);
 				if (n.hasChildNodes()){
 					//console.log("chat child node ", n);
 					switch(n.nodeName) {
@@ -590,21 +590,12 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		},
 
 		retrieveRoster: function(){
-			////console.log("xmppService::retrieveRoster()");
-			var props={
-				id: this.getNextIqId(),
-				from: this.jid + "/" + this.resource,
-				type: "get"
-			}
-			var req = new dojox.string.Builder(dojox.xmpp.util.createElement("iq",props,false));
-			req.append(dojox.xmpp.util.createElement("query",{xmlns: "jabber:iq:roster"},true));
-			req.append("</iq>");
-
-			var def = this.dispatchPacket(req,"iq", props.id);
-			def.addCallback(this, "onRetrieveRoster");
+			dojo.deprecated("xmppSession::retrieveRoster()", "Use xmppSession::rosterStore instead", "2.0");
+			// Call the store fetch here.
 		},
 
 		getRosterIndex: function(jid){
+			dojo.deprecated("xmppSession::getRosterIndex", "", "2.0");
 			if(jid.indexOf('@')==-1){
 				jid += '@' + this.domain;
 			}
@@ -612,50 +603,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				if(jid == this.roster[i].jid) { return i; }
 			}
 			return -1;
-		},
-
-		createRosterEntry: function(elem){
-			////console.log("xmppService::createRosterEntry()");
-			var re = {
-				name: elem.getAttribute('name'),
-				jid: elem.getAttribute('jid'),
-				groups: [],
-				status: dojox.xmpp.presence.SUBSCRIPTION_NONE,
-				substatus: dojox.xmpp.presence.SUBSCRIPTION_SUBSTATUS_NONE
-			//	displayToUser: false
-			}	
-
-			if (!re.name){
-				re.name = re.id;
-			}
-			
-			
-
-			for(var i=0; i<elem.childNodes.length;i++){
-				var n = elem.childNodes[i];
-				if (n.nodeName=='group' && n.hasChildNodes()){
-					re.groups.push(n.firstChild.nodeValue);
-				}
-			} 
-
-			if (elem.getAttribute('subscription')){
-				re.status = elem.getAttribute('subscription');
-			}	
-
-			if (elem.getAttribute('ask')=='subscribe'){
-				re.substatus = dojox.xmpp.presence.SUBSCRIPTION_REQUEST_PENDING;
-			}	
-			//Display contact rules from http://www.xmpp.org/extensions/xep-0162.html#contacts
-		/*	if(re.status == dojox.xmpp.presence.SUBSCRIPTION_REQUEST_PENDING || 
-				re.status == dojox.xmpp.presence.SUBSCRIPTION_TO || 
-				re.status == dojox.xmpp.presence.SUBSCRIPTION_BOTH ||
-				re.groups.length > 0 ||
-				re.name
-				) {
-					re.displayToUser = true;
-				}
-*/
-			return re;
 		},
 
 		getNextIqId: function(){
@@ -724,7 +671,9 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		onLogin: function(){ 
 			////console.log("xmppSession::onLogin()");
-			this.retrieveRoster();
+			//this.retrieveRoster();
+			this.rosterStore = new dojox.xmpp.im.RosterStore(this);
+			this.setState(dojox.xmpp.xmpp.ACTIVE); // For backwards compatibilty. To be removed in 2.0.
 		},
 
 		onLoginFailure: function(msg){
@@ -736,28 +685,13 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		},
 
 		onRetrieveRoster: function(msg){
-			////console.log("xmppService::onRetrieveRoster() ", arguments);
-			if ((msg.getAttribute('type')=='result') && msg.hasChildNodes()){
-				var query = msg.getElementsByTagName('query')[0];
-				if (query.getAttribute('xmlns')=="jabber:iq:roster"){
-					for (var i=0;i<query.childNodes.length;i++){
-						if (query.childNodes[i].nodeName=="item"){
-							this.roster[i] = this.createRosterEntry(query.childNodes[i]);
-						}
-					}
-				}	
-			}else if(msg.getAttribute('type')=="error"){
-				//console.log("xmppService::storeRoster()  Error recieved on roster get");	
-			}
-
-			////console.log("Roster: ", this.roster);
-			this.setState(dojox.xmpp.xmpp.ACTIVE);
-			this.onRosterUpdated();
-
+			dojo.deprecated("xmppSession::onRetrieveRoster", "Listen to xmppSession's Notification API events instead", "2.0");
 			return msg;	
 		},
 		
-		onRosterUpdated: function() {},
+		onRosterUpdated: function() {
+			dojo.deprecated("xmppSession::onRosterUpdated", "Listen to xmppSession's Notification API events instead", "2.0")
+		},
 
 		onSubscriptionRequest: function(req){},
 
@@ -786,7 +720,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		onActive: function(){
 			////console.log("xmppSession::onActive()");
-			//this.presenceService.publish({show: dojox.xmpp.presence.STATUS_ONLINE});
+			this.presenceService.publish({show: dojox.xmpp.presence.STATUS_ONLINE});
 		},
 
 		onRegisterChatInstance: function(chatInstance, message){
