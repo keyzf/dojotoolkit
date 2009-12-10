@@ -430,6 +430,9 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 			ifr.setAttribute('src', s);
 			this.editingArea.appendChild(ifr);
 			if(dojo.isWebKit){ // Safari seems to always append iframe with src=about:blank
+                if(window.Titanium){
+                    s = "editor.html";
+                }
 				setTimeout(function(){ifr.setAttribute('src', s)},0);
 			}
 		}else{
