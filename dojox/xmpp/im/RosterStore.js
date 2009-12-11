@@ -12,24 +12,52 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
     //     The RosterStore implements the dojo.data.api.Read API and reads
     //     data from xmppSession.roster array
     //
-    _roster: {},
-    _groups: {},
     
     // CONSTANTS: all member constants are declared under this object
     CONSTANTS: {
         // CONSTANTS.DEFAULT_GROUP_NAME: Roster items that have no groups are added to this group
-        DEFAULT_GROUP_NAME: "Unfiled Contacts"
+        DEFAULT_GROUP_NAME: "Unfiled Contacts",
+		
+		presence: {
+		    UPDATE: 201,
+		    SUBSCRIPTION_REQUEST: 202,
+		//  SUBSCRIPTION_REQUEST_PENDING: 203,
+		    /* used when 'ask' attribute is absent on a roster item */
+		    SUBSCRIPTION_SUBSTATUS_NONE: 204,
+		
+		    SUBSCRIPTION_NONE: 'none',
+		    SUBSCRIPTION_FROM: 'from',
+		    SUBSCRIPTION_TO: 'to',
+		    SUBSCRIPTION_BOTH: 'both',
+		    SUBSCRIPTION_REQUEST_PENDING: 'pending',
+		
+		    STATUS_ONLINE: 'online',
+		    STATUS_AWAY: 'away',
+		    STATUS_CHAT: 'chat',
+		    STATUS_DND: 'dnd',
+		    STATUS_EXTENDED_AWAY: 'xa',
+		    STATUS_OFFLINE: 'offline',
+		    
+		    STATUS_INVISIBLE: 'invisible'
+		}
     },
     constructor: function(session){
         // summary: constructor
         this._roster = {};
         this._groups = {};
+		this._tempPresence = {};  // For temporarily storing presence information, incase the roster isn't available yet.
 		this._session = session;
         this._features = {
             'dojo.data.api.Read': true,
             'dojo.data.api.Notification': true,
             'dojo.data.api.Identity': true
         };
+		
+		session.registerPacketHandler({
+			name: "ChatPresenceUpdate",
+			condition: "presence:not([type]):not(x[xmlns='http://jabber.org/protocol/muc']), presence[type='unavailable']:not(x[xmlns='http://jabber.org/protocol/muc'])",
+			handler: dojo.hitch(this, this._presenceUpdateHandler)
+		})
     },
     startup: function(){
         //pw.subscribe("/pw/desktop/kernel", this, this._processKernelEvent);
@@ -108,7 +136,6 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
             var buddyItem = this.getBuddyItem(buddy);
             this._buddyRemoved(buddyItem);
         });
-        //dojo.connect(session, "onRosterUpdated", this, this._updateRoster);
         dojo.connect(session, "onPresenceUpdate", this, this._updateBuddyPresence);
     },
     
@@ -322,15 +349,6 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
         }]);
         */
     },
-    _updateRoster: function(){
-        // summary:
-        //     This function is called when the session receives the entire roster (first time)
-        for (var jid in this._roster) {
-            var buddy = this._roster[jid];
-            var buddyItem = this._createBuddyItem(buddy);
-            this._rosterAdded(buddyItem);
-        }
-    },
     _putRosterEntryInGroup: function(buddyItem, groupName){
         // summary:
         //     associate the buddyItem to a groupItem
@@ -479,6 +497,68 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
         }
         this._filterBuddyItem(buddyItem);
     },
+	
+	_getPresenceObject: function(jid) {
+		var bareJid = dojox.xmpp.util.getBareJid(jid);
+		if(this._tempPresence[bareJid]) {
+			var presence = this._tempPresence[bareJid];
+			delete this._tempPresence[bareJid];
+			return presence;
+		} else {
+			return {
+				show: "offline",
+				status: ""
+			}
+		}
+	},
+	
+	_presenceUpdateHandler: function(msg) {
+		var bareJid = dojox.xmpp.util.getBareJid(msg.getAttribute("from"));
+		var p = {
+		    from: bareJid,
+		    resource: dojox.xmpp.util.getResourceFromJid(msg.getAttribute('from')),
+		    show: dojox.xmpp.presence.STATUS_ONLINE,
+		    priority: 5,
+		    hasAvatar: false
+		}   
+		
+		if(msg.getAttribute('type')=='unavailable'){
+		    p.show = this.CONSTANTS.presence.STATUS_OFFLINE
+		}
+		
+        for (var i=0; i<msg.childNodes.length;i++){
+            var n=msg.childNodes[i];
+            if (n.hasChildNodes()){
+                switch(n.nodeName){
+                    case 'status':
+                    case 'show':
+                        p[n.nodeName]=n.firstChild.nodeValue;
+                        break;
+                    case 'status':
+                        p.priority=parseInt(n.firstChild.nodeValue);
+                        break;
+                    case 'x':
+                        if(n.firstChild && n.firstChild.firstChild &&  n.firstChild.firstChild.nodeValue != "") { 
+                            p.avatarHash = n.firstChild.firstChild.nodeValue;
+                            p.hasAvatar = true;
+                        }
+                        break;
+                }
+            }
+        }
+		
+		if(this._isRosterFetched) {
+			var oldPresence = this._roster[bareJid].presence;
+			this._roster[bareJid].presence = p;
+			this.onSet(this._roster[bareJid], "presence", oldPresence, p);
+			this._updateOnlineCount(buddyItem, oldPresence, p);
+		} else {
+			this._tempPresence[bareJid] = p;
+		}
+		
+		this._session.onPresenceUpdate(p);
+	},
+	
     _createRosterEntry: function(elem) {
         var presenceNs = dojox.xmpp.presence, jid = elem.getAttribute("jid");
         
@@ -490,10 +570,7 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
             status: (elem.getAttribute("subscription") || presenceNs.SUBSCRIPTION_NONE),
             substatus: ((elem.getAttribute("ask")=="subscribe")?presenceNs.SUBSCRIPTION_REQUEST_PENDING:presenceNs.SUBSCRIPTION_SUBSTATUS_NONE),
             type: "buddy",
-			presence: {
-				show: "offline",
-				status: ""
-			},
+			presence: this._getPresenceObject(jid),
             groups: []
         };
         
@@ -521,7 +598,8 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
 	        }
         */
 
-        return re;
+		this._session.roster.push(re);   // For backwards compatibility. To be removed in 2.0.
+		this._roster[re.jid] = re;
 	},
 	
 	getStoreRepresentation: function() {
@@ -556,12 +634,7 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
 					var session = this._session;
                     session.onRetrieveRoster(msg);     // For backwards compatibility. To be removed in 2.0.
 
-                    dojo.query("query[xmlns='jabber:iq:roster'] > item", msg).forEach(function(item){
-						var re = this._createRosterEntry(item);
-						
-						session.roster.push(re);   // For backwards compatibility. To be removed in 2.0.
-						this._roster[re.jid] = re;
-                    }, this);
+                    dojo.query("query[xmlns='jabber:iq:roster'] > item", msg).forEach(this._createRosterEntry, this);
                     
                     this._isRosterFetched = true;
                     findCallback(this.getStoreRepresentation(keywordArgs), keywordArgs);

@@ -271,7 +271,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 					//console.log("xmppService::presenceHandler() Error");
 					break;
 				default:
-					this.presenceUpdate(msg);
+					//this.presenceUpdate(msg);
 					break;
 			}
 		},
