@@ -498,20 +498,6 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
         this._filterBuddyItem(buddyItem);
     },
 	
-	_getPresenceObject: function(jid) {
-		var bareJid = dojox.xmpp.util.getBareJid(jid);
-		if(this._tempPresence[bareJid]) {
-			var presence = this._tempPresence[bareJid];
-			delete this._tempPresence[bareJid];
-			return presence;
-		} else {
-			return {
-				show: "offline",
-				status: ""
-			}
-		}
-	},
-	
 	_presenceUpdateHandler: function(msg) {
 		var bareJid = dojox.xmpp.util.getBareJid(msg.getAttribute("from"));
 		var p = {
@@ -548,32 +534,70 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
         }
 		
 		if(this._isRosterFetched) {
-			var oldPresence = this._roster[bareJid].presence;
-			this._roster[bareJid].presence = p;
-			this.onSet(this._roster[bareJid], "presence", oldPresence, p);
-			this._updateOnlineCount(buddyItem, oldPresence, p);
+			var oldPresence = this._roster[bareJid].presence, resources = this._roster[bareJid].resources;
+			
+			if(resources[p.resource] && (p.show === this.CONSTANTS.presence.STATUS_OFFLINE)) {
+				delete resources[p.resource];
+			} else {
+                resources[p.resource] = p;
+			}
+			this._chooseBestPresence(this._roster[bareJid]);
+			this._updateOnlineCount(this._roster[bareJid], oldPresence, this._roster[bareJid].presence);
+            this.onSet(this._roster[bareJid], "presence", oldPresence, this._roster[bareJid].presence);
 		} else {
-			this._tempPresence[bareJid] = p;
+			if(!this._tempPresence[bareJid]) {
+				this._tempPresence[bareJid] = {};
+			}
+			this._tempPresence[bareJid][p.resource] = p;
 		}
 		
-		this._session.onPresenceUpdate(p);
+		this._session.onPresenceUpdate(p);    // For backwards compatibility. To be removed in 2.0.
+	},
+	
+	_chooseBestPresence: function(rosterEntry) {
+		// First sanitize. If there were temporarily stored presence information, clean that up.
+		var bareJid = rosterEntry.jid;
+		if(this._tempPresence[bareJid]) {
+			for(var key in this._tempPresence[bareJid]) {
+				rosterEntry.resources[key] = this._tempPresence[bareJid][key];
+				delete this._tempPresence[bareJid][key];
+			}
+		}
+		
+		// TODO: use a sensible logic here. Like pick based on the show text.
+		var found = false;
+		for(key in rosterEntry.resources) {
+			found = true;
+			break;
+		}
+		
+		if(found) {
+			rosterEntry.presence = rosterEntry.resources[key];
+		} else {
+			rosterEntry.presence = {
+				show: "offline",
+				status: ""
+			};
+		}
 	},
 	
     _createRosterEntry: function(elem) {
-        var presenceNs = dojox.xmpp.presence, jid = elem.getAttribute("jid");
+        var presenceNs = dojox.xmpp.presence, jid = dojox.xmpp.util.getBareJid(elem.getAttribute("jid"));
         
         var re = {
             name: elem.getAttribute("name") || jid,
 			rosterNodeType: "contact",
 			show: true,
+			resources: {},
             jid: jid,
             status: (elem.getAttribute("subscription") || presenceNs.SUBSCRIPTION_NONE),
             substatus: ((elem.getAttribute("ask")=="subscribe")?presenceNs.SUBSCRIPTION_REQUEST_PENDING:presenceNs.SUBSCRIPTION_SUBSTATUS_NONE),
             type: "buddy",
-			presence: this._getPresenceObject(jid),
             groups: []
         };
         
+		this._chooseBestPresence(re);
+		
         var groupNodes = dojo.query("group", elem);
         
 		if(groupNodes.length) {
@@ -634,8 +658,8 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
 					var session = this._session;
                     session.onRetrieveRoster(msg);     // For backwards compatibility. To be removed in 2.0.
 
-                    dojo.query("query[xmlns='jabber:iq:roster'] > item", msg).forEach(this._createRosterEntry, this);
-                    
+					dojo.query("query[xmlns='jabber:iq:roster'] > item", msg).forEach(this._createRosterEntry, this);
+
                     this._isRosterFetched = true;
                     findCallback(this.getStoreRepresentation(keywordArgs), keywordArgs);
 					

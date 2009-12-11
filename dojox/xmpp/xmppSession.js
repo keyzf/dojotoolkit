@@ -695,7 +695,9 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		onSubscriptionRequest: function(req){},
 
-		onPresenceUpdate: function(p){},
+		onPresenceUpdate: function(p){
+			dojo.deprecated("xmppSession::onPresenceUpdate", "Listen to xmppSession's Notification API events instead", "2.0")
+		},
 
 		onTransportReady: function(){
 			this.setState(dojox.xmpp.xmpp.CONNECTED);
