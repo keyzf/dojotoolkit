@@ -627,10 +627,20 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
 	},
 	
 	getStoreRepresentation: function() {
-        var treeContents = [];
+        var treeContents, groupNamesList = [];
+		
         for (var groupName in this._groups) {
-            treeContents.push(this._groups[groupName]);
+			groupNamesList.push(groupName);
         }
+		
+		groupNamesList.sort(function(a, b) {
+			var a = a.toLowerCase(), b = b.toLowerCase();
+			return (a===b)?0:(a<b?-1:1);
+		});
+		
+		treeContents = dojo.map(groupNamesList, function(groupName) {
+			return this._groups[groupName];
+		}, this);
 		
 		return treeContents;
 	},
@@ -656,16 +666,14 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
                 if ((msg.getAttribute('type') == 'result')) {
                     // Iterate over roster items
 					var session = this._session;
-                    session.onRetrieveRoster(msg);     // For backwards compatibility. To be removed in 2.0.
-
+					session.onRetrieveRoster(msg); // For backwards compatibility. To be removed in 2.0.
 					dojo.query("query[xmlns='jabber:iq:roster'] > item", msg).forEach(this._createRosterEntry, this);
-
-                    this._isRosterFetched = true;
-                    findCallback(this.getStoreRepresentation(keywordArgs), keywordArgs);
 					
-		            session.setState(dojox.xmpp.xmpp.ACTIVE); // For backwards compatibilty. To be removed in 2.0.
-                    session.onRosterUpdated();                      // For backwards compatibilty. To be removed in 2.0.
-                    
+					this._isRosterFetched = true;
+					findCallback(this.getStoreRepresentation(keywordArgs), keywordArgs);
+					
+					session.setState(dojox.xmpp.xmpp.ACTIVE); // For backwards compatibilty. To be removed in 2.0.
+					session.onRosterUpdated(); // For backwards compatibilty. To be removed in 2.0.
                 } else if (msg.getAttribute('type') == "error") {
                     this._isRosterFetched = false;
                     errorCallback("Error", keywordArgs);  
