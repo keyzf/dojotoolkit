@@ -598,7 +598,7 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
         
 		this._chooseBestPresence(re);
 		
-        var groupNodes = dojo.query("group", elem);
+        var groupNodes = dojo.query("group:not(:empty)", elem);
         
 		if(groupNodes.length) {
             groupNodes.forEach(function(groupNode){
