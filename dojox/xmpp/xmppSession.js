@@ -79,10 +79,10 @@ dojox.xmpp.xmppSession = function(props){
 	// Register the packet handlers:
 	
     this.registerPacketHandler({
-		name: "iq",
+		name: "iqSetForRoster",
 		condition: "iq[type='set'] query[xmlns='jabber:iq:roster']",
 		handler: dojo.hitch(this, function(msg) {
-	        this.rosterSetHandler(dojo.query("iq[type='set' query[xmlns='jabber:iq:roster']", msg)[0]);
+	        this.rosterSetHandler(dojo.query("iq[type='set'] query[xmlns='jabber:iq:roster']", msg)[0]);
 	        this.sendIqResult(msg.getAttribute("id"), msg.getAttribute("from"));
 		})
     });
@@ -116,7 +116,7 @@ dojox.xmpp.xmppSession = function(props){
     
     this.registerPacketHandler({
 		name: "ChatPresence",
-		condition: "presence:not(x[xmlns='http://jabber.org/protocol/muc'])",
+		condition: "presence:not(x[xmlns^='http://jabber.org/protocol/muc'])",
 		handler: dojo.hitch(this, "presenceHandler")
 	});
     
