@@ -80,16 +80,28 @@ dojox.xmpp.xmppSession = function(props){
 	
     this.registerPacketHandler({
 		name: "iqSetForRoster",
-		condition: "iq[type='set'] query[xmlns='jabber:iq:roster']",
+		//condition: "iq[type='set'] query[xmlns='jabber:iq:roster']",
+		condition: function(msg) {
+			if(msg.nodeName === "iq" && msg.getAttribute("type") === "set" && msg.getElementsByTagName("query").length && msg.getElementsByTagName("query")[0].getAttribute("xmlns") === "jabber:iq:roster") {
+				return true;
+			}
+			return false;
+		},
 		handler: dojo.hitch(this, function(msg) {
-	        this.rosterSetHandler(dojo.query("iq[type='set'] query[xmlns='jabber:iq:roster']", msg)[0]);
+	        this.rosterSetHandler(msg.getElementsByTagName("query")[0]);
 	        this.sendIqResult(msg.getAttribute("id"), msg.getAttribute("from"));
 		})
     });
 	
 	this.registerPacketHandler({
 		name: "iq",
-		condition: "iq[type='set']:not(query)",
+		//condition: "iq[type='set']:not(query)",
+		condition: function(msg) {
+			if(msg.nodeName === "iq" && msg.getAttribute("type") === "set" && !msg.getElementsByTagName("query").length) {
+				return true;
+			}
+			return false;
+		},
 		handler: dojo.hitch(this, function(msg) {
     		this.sendStanzaError('iq', this.domain, msg.getAttribute('id'), 'cancel', 'service-unavailable', 'service not implemented');
 		})
