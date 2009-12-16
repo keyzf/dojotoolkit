@@ -799,6 +799,9 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 	getGroups: function() {
 		return this._groups;
 	},
+	getRoster: function() {
+		return this._roster;
+	},
     onSet: function(/* item */item, /* attribute-name-string */ attribute, /* object | array */ oldValue, /* object | array */ newValue){
         // summary:
         //     See dojo.data.api.Notification.onSet()
