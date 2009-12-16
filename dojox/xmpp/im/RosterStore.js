@@ -546,10 +546,11 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 		if(this._isRosterFetched) {
 			var oldPresence = this._roster[bareJid].presence, resources = this._roster[bareJid].resources;
 			
-			if(resources[p.resource] && (p.show === this.CONSTANTS.presence.STATUS_OFFLINE)) {
+			if(resources[p.resource.toString()] && (p.show === this.CONSTANTS.presence.STATUS_OFFLINE)) {
+				console.log("Deleting " + p.resource);
 				delete resources[p.resource];
-			} else {
-                resources[p.resource] = p;
+			} else if (p.show !== this.CONSTANTS.presence.STATUS_OFFLINE) {
+				resources[p.resource] = p;
 			}
 			this._chooseBestPresence(this._roster[bareJid]);
 			this._updateOnlineCount(this._roster[bareJid], oldPresence, this._roster[bareJid].presence);
