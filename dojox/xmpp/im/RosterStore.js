@@ -798,6 +798,9 @@ dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data
             data: groupsData
         });
     },
+	getGroups: function() {
+		return this._groups;
+	},
     onSet: function(/* item */item, /* attribute-name-string */ attribute, /* object | array */ oldValue, /* object | array */ newValue){
         // summary:
         //     See dojo.data.api.Notification.onSet()
