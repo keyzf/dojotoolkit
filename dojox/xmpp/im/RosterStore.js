@@ -1,13 +1,11 @@
 dojo.provide("dojox.xmpp.im.RosterStore");
 
-dojo.require("dojo.data.api.Notification");
-dojo.require("dojo.data.api.Identity");
 dojo.require("dojo.data.util.filter");
 dojo.require("dojo.data.util.simpleFetch");
 
 dojo.require("dojox.xmpp.util");
 
-dojo.declare("dojox.xmpp.im.RosterStore", [dojo.data.api.Notification, dojo.data.api.Identity], {
+dojo.declare("dojox.xmpp.im.RosterStore", null, {
     // summary:
     //     The RosterStore implements the dojo.data.api.Read API and reads
     //     data from xmppSession.roster array
