@@ -509,7 +509,6 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
     },
 	
 	_presenceUpdateHandler: function(msg) {
-		console.log(msg);
 		var bareJid = dojox.xmpp.util.getBareJid(msg.getAttribute("from"));
 		var p = {
 		    from: bareJid,
@@ -575,15 +574,24 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 			}
 		}
 		
-		// TODO: use a sensible logic here. Like pick based on the show text.
-		var found = false;
+		var resourceList = []; 
 		for(key in rosterEntry.resources) {
-			found = true;
-			break;
+			resourceList.push(key);
 		}
 		
-		if(found) {
-			rosterEntry.presence = rosterEntry.resources[key];
+		if(resourceList.length) {
+			var presencePriority = {
+				online: 1,
+				chat: 1,
+				dnd: 2,
+				away: 3,
+				xa: 4
+			}
+			resourceList.sort(function(item1, item2) {
+				return (presencePriority[rosterEntry.resources[item1].show] - presencePriority[rosterEntry.resources[item2].show]);
+			});
+			
+			rosterEntry.presence = rosterEntry.resources[resourceList[0]];
 		} else {
 			rosterEntry.presence = {
 				show: "offline",
