@@ -56,7 +56,10 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 			//condition: "presence:not([type]):not(x[xmlns^='http://jabber.org/protocol/muc']), presence[type='unavailable']:not(x[xmlns^='http://jabber.org/protocol/muc'])",
 			condition: function(msg) {
 				if(msg.nodeName === "presence") {
-					if(!dojo.query("x[xmlns^='http://jabber.org/protocol/muc']", msg).length) {
+					var xNodes = dojo.query("x", msg); 
+					if(xNodes.length && xNodes.some(function(node) {
+						return node.getAttribute("xmlns").indexOf("http://jabber.org/protocol/muc") === 0;
+					})) {
 						return false;
 					}
 					if(!msg.getAttribute("type") || msg.getAttribute("type") == "unavailable") {
