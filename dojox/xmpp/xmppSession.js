@@ -142,7 +142,7 @@ dojox.xmpp.xmppSession = function(props){
     
 	this.registerPacketHandler({
 		name: "ChatMessage",
-		condition: "message[type='chat'])",
+		condition: "message[type='chat'], message:not([type]), message[type='normal']",
 		handler: dojo.hitch(this, "chatHandler")
 	});
     
