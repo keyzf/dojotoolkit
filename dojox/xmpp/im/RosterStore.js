@@ -57,7 +57,7 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 			condition: function(msg) {
 				if(msg.nodeName === "presence") {
 					var xNodes = msg.getElementsByTagName("x"); 
-					if(xNodes.length && xNodes.some(function(node) {
+					if(xNodes.length && dojo.some(xNodes, function(node) {
 						return node.getAttribute("xmlns").indexOf("http://jabber.org/protocol/muc") === 0;
 					})) {
 						return false;
