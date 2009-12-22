@@ -142,7 +142,15 @@ dojox.xmpp.xmppSession = function(props){
     
 	this.registerPacketHandler({
 		name: "ChatMessage",
-		condition: "message[type='chat'], message:not([type]), message[type='normal']",
+		condition: function(msg) {
+			if(msg.nodeName === "message") {
+				if(msg.getAttribute("type") === "chat" || msg.getAttribute("type") === "normal" || !msg.getAttribute("type")) {
+					return true;
+				}
+			}
+			return false;
+		},
+		//condition: "message[type='chat'], message:not([type]), message[type='normal']",
 		handler: dojo.hitch(this, "chatHandler")
 	});
     
@@ -307,46 +315,46 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 			var chatState = null;
 				//console.log("chat child node ", msg.childNodes, msg.childNodes.length);
-			for (var i=0; i<msg.childNodes.length; i++){
-				var n = msg.childNodes[i];
-				if (n.hasChildNodes()){
-					//console.log("chat child node ", n);
-					switch(n.nodeName) {
-						case 'thread':
-							message.chatid = n.firstChild.nodeValue;
-							break;
-						case 'body':
-							if (!n.getAttribute('xmlns') || (n.getAttribute('xmlns')=="")){
-								message.body = n.firstChild.nodeValue;
-							}
-							break;
-						case 'subject':
-							message.subject = n.firstChild.nodeValue;
-						case 'html':
-							if (n.getAttribute('xmlns')==dojox.xmpp.xmpp.XHTML_IM_NS){
-								message.xhtml = n.getElementsByTagName("body")[0];
-							}
-							break;
-						case 'x':
-							break;
-						default:
-							console.log("xmppSession::chatHandler() Unknown node type: ",n.nodeName);
-					}
-				}
-				if(n.getAttribute && n.getAttribute('xmlns')==dojox.xmpp.chat.CHAT_STATE_NS){
-					chatState = n.nodeName;
-				}
-
-				// Legacy delayed delivery messages, XEP-0091
-				if(n.nodeName=="x" && n.getAttribute('xmlns')==dojox.xmpp.xmpp.LEGACY_DELAYED_DELIVERY_NS){
-					message.timestamp = dojox.xmpp.util.parseLegacyTimestamp(n.getAttribute("stamp"));
-				}
-
-				// Standard delayed delivery messages, XEP-0203
-				if(n.nodeName=="delay" && n.getAttribute('xmlns')==dojox.xmpp.DELAYED_DELIVERY_NS){
-					message.timestamp = dojo.date.stamp.fromISOString(n.getAttribute("stamp"));
+			
+			var messageNodeHandlers = {
+				thread: function(node) {
+					message.chatid = node.firstChild.nodeValue
+				},
+				body: function(node) {
+	                if (!node.getAttribute('xmlns') || (node.getAttribute('xmlns') === "")){
+	                    message.body = node.firstChild.nodeValue;
+	                }
+				},
+				subject: function(node) {
+                    message.subject = node.firstChild.nodeValue;
+				},
+				html: function(node) {
+	                if (node.getAttribute('xmlns') === dojox.xmpp.xmpp.XHTML_IM_NS){
+	                    message.xhtml = node.getElementsByTagName("body")[0];
+	                }
 				}
 			}
+			
+			dojo.query("> *", msg).forEach(function(node) {
+				var msgNodeName = node.nodeName;
+				if(messageNodeHandlers[msgNodeName]) {
+					messageNodeHandlers[msgNodeName](node);
+				}
+
+                if(node.getAttribute("xmlns") === dojox.xmpp.chat.CHAT_STATE_NS) {
+                    chatState = node.nodeName;
+                }
+				
+                // Legacy delayed delivery messages, XEP-0091
+                if(node.nodeName=="x" && node.getAttribute("xmlns") === dojox.xmpp.xmpp.LEGACY_DELAYED_DELIVERY_NS){
+                    message.timestamp = dojox.xmpp.util.parseLegacyTimestamp(node.getAttribute("stamp"));
+                }
+
+                // Standard delayed delivery messages, XEP-0203
+                if(node.nodeName=="delay" && node.getAttribute("xmlns")==dojox.xmpp.DELAYED_DELIVERY_NS){
+                    message.timestamp = dojo.date.stamp.fromISOString(node.getAttribute("stamp"));
+                }
+			});
 
 			var found = -1;
 			if (message.chatid){
