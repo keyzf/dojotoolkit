@@ -94,20 +94,13 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 			}
 		}
 */
-		if (message.subject && message.subject != ""){
-			message.append(dojox.xmpp.util.createElement("subject",{},false));
-			message.append(message.subject);
-			message.append("</subject>");
+		if (message.subject && message.subject != "") {
+			message.append(dojox.xmpp.util.createElement("subject", {}, false), message.subject, "</subject>");
 		}
-		message.append(bodyPlainTag);
-		message.append(html);
-		message.append(bodyTag);
-		message.append("</html>");
+		message.append(bodyPlainTag, html, bodyTag, "</html>");
 
 		if(this.chatid){
-			message.append(dojox.xmpp.util.createElement("thread", {}, false));
-			message.append(this.chatid);
-			message.append("</thread>");
+			message.append(dojox.xmpp.util.createElement("thread", {}, false), this.chatid, "</thread>");
 		}
 
 		if (this.useChatState){

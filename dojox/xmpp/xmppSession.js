@@ -355,22 +355,22 @@ dojo.extend(dojox.xmpp.xmppSession, {
                     message.timestamp = dojo.date.stamp.fromISOString(node.getAttribute("stamp"));
                 }
 			});
-
+			
 			var found = -1;
-			if (message.chatid){
-				for (var i=0; i< this.chatRegister.length; i++){
+			if(message.chatid){
+				for(var i=0; i< this.chatRegister.length; i++) {
 					var ci = this.chatRegister[i];
 					////console.log("ci.chatid: ", ci.chatid, message.chatid);
-					if (ci && ci.chatid == message.chatid) {
+					if(ci && ci.chatid === message.chatid) {
 						found = i;
 						break;	
 					}
 				}
 			} else {
-				for (var i=0; i< this.chatRegister.length; i++){
+				for(var i=0; i< this.chatRegister.length; i++) {
 					var ci = this.chatRegister[i];
 					if(ci){
-						if (ci.uid==this.getBareJid(message.from)){
+						if (ci.uid === this.getBareJid(message.from)){
 							found = i;
 						}
 					}
