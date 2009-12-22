@@ -51,11 +51,12 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 			type: "chat"
 		}
 		var request = new dojox.string.Builder(dojox.xmpp.util.createElement("message", req, false));
-		request.append(dojox.xmpp.util.createElement("thread",{},false));	
-		request.append(this.chatid);
-		request.append("</thread>");
-		request.append(dojox.xmpp.util.createElement("active",{xmlns: dojox.xmpp.chat.CHAT_STATE_NS},true));
-		request.append("</message>");
+		request.append(
+			dojox.xmpp.util.createElement("thread",{},false),
+				this.chatid,
+			"</thread>",
+			dojox.xmpp.util.createElement("active",{xmlns: dojox.xmpp.chat.CHAT_STATE_NS},true),
+			"</message>");
 		this.session.dispatchPacket(request.toString());
 
 		this.onInvite(contact);
