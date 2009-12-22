@@ -130,9 +130,7 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 		request.append(dojox.xmpp.util.createElement(state, {xmlns: dojox.xmpp.chat.CHAT_STATE_NS},true));
 		this._currentState = state;
 		if(this.chatid){
-			request.append("<thread>");
-			request.append(this.chatid);
-			request.append("</thread>");
+			request.append("<thread>", this.chatid, "</thread>");
 		}
 
 		request.append("</message>");
