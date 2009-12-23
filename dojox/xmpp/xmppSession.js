@@ -334,25 +334,27 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				}
 			}
 			
-			dojo.query("> *", msg).forEach(function(node) {
+			dojo.query("> *", msg).forEach(function(node){
 				var msgNodeName = node.nodeName;
-				if(messageNodeHandlers[msgNodeName]) {
+				if (messageNodeHandlers[msgNodeName]) {
 					messageNodeHandlers[msgNodeName](node);
 				}
-
-                if(node.getAttribute("xmlns") === dojox.xmpp.chat.CHAT_STATE_NS) {
-                    chatState = node.nodeName;
-                }
 				
-                // Legacy delayed delivery messages, XEP-0091
-                if(node.nodeName=="x" && node.getAttribute("xmlns") === dojox.xmpp.xmpp.LEGACY_DELAYED_DELIVERY_NS){
-                    message.timestamp = dojox.xmpp.util.parseLegacyTimestamp(node.getAttribute("stamp"));
-                }
-
-                // Standard delayed delivery messages, XEP-0203
-                if(node.nodeName=="delay" && node.getAttribute("xmlns")==dojox.xmpp.DELAYED_DELIVERY_NS){
-                    message.timestamp = dojo.date.stamp.fromISOString(node.getAttribute("stamp"));
-                }
+				var xmlns = node.getAttribute("xmlns");
+				
+				if (xmlns === dojox.xmpp.chat.CHAT_STATE_NS) {
+					chatState = node.nodeName;
+				}
+				
+				// Legacy delayed delivery messages, XEP-0091
+				if (node.nodeName == "x" && xmlns === dojox.xmpp.xmpp.LEGACY_DELAYED_DELIVERY_NS) {
+					message.timestamp = dojox.xmpp.util.parseLegacyTimestamp(node.getAttribute("stamp"));
+				}
+				
+				// Standard delayed delivery messages, XEP-0203
+				if (node.nodeName == "delay" && xmlns === dojox.xmpp.DELAYED_DELIVERY_NS) {
+					message.timestamp = dojo.date.stamp.fromISOString(node.getAttribute("stamp"));
+				}
 			});
 			
 			var found = -1, i, l, ci;
