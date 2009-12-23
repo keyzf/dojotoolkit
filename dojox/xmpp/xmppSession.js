@@ -305,7 +305,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		chatHandler: function(msg){
 			//console.log("xmppSession::chatHandler() ", msg);
-			
 
 			var message = {
 				from: msg.getAttribute('from'),
@@ -356,10 +355,12 @@ dojo.extend(dojox.xmpp.xmppSession, {
                 }
 			});
 			
-			var found = -1;
+            if ((!message.body || message.body=="") && !message.xhtml) {return;}
+
+			var found = -1, i, l, ci;
 			if(message.chatid){
-				for(var i=0; i< this.chatRegister.length; i++) {
-					var ci = this.chatRegister[i];
+				for(i=0, l=this.chatRegister.length; i< l; i++) {
+					ci = this.chatRegister[i];
 					////console.log("ci.chatid: ", ci.chatid, message.chatid);
 					if(ci && ci.chatid === message.chatid) {
 						found = i;
@@ -367,12 +368,11 @@ dojo.extend(dojox.xmpp.xmppSession, {
 					}
 				}
 			} else {
-				for(var i=0; i< this.chatRegister.length; i++) {
-					var ci = this.chatRegister[i];
-					if(ci){
-						if (ci.uid === this.getBareJid(message.from)){
-							found = i;
-						}
+				var bareJid = dojox.xmpp.util.getBareJid(message.from);
+				for(var i=0, l=this.chatRegister.length; i<l; i++) {
+					ci = this.chatRegister[i];
+					if(ci && ci.uid === bareJid){
+						found = i;
 					}
 				}
 			}	
@@ -383,22 +383,18 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				if(chatState){
 					chat.setState(chatState);
 
-					if (chat.firstMessage){
-						if (chatState == dojox.xmpp.chat.ACTIVE_STATE) {
-							chat.firstMessage = false;
-						}
+					if (chat.firstMessage && chatState == dojox.xmpp.chat.ACTIVE_STATE) {
+						chat.firstMessage = false;
 					}
 				}
 			} 
-
-			if ((!message.body || message.body=="") && !message.xhtml) {return;}
 
 			if (found>-1){
 				var chat = this.chatRegister[found];
 				chat.recieveMessage(message);
 			}else{
 				var chatInstance = new dojox.xmpp.ChatService();
-				chatInstance.uid = this.getBareJid(message.from);
+				chatInstance.uid = dojox.xmpp.util.getBareJid(message.from);
 				chatInstance.chatid = message.chatid;
 				
 				chatInstance.firstMessage = true;
