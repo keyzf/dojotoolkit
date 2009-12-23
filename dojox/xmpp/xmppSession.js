@@ -355,8 +355,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
                 }
 			});
 			
-            if ((!message.body || message.body=="") && !message.xhtml) {return;}
-
 			var found = -1, i, l, ci;
 			if(message.chatid){
 				for(i=0, l=this.chatRegister.length; i< l; i++) {
@@ -388,6 +386,8 @@ dojo.extend(dojox.xmpp.xmppSession, {
 					}
 				}
 			} 
+
+            if ((!message.body || message.body=="") && !message.xhtml) {return;}
 
 			if (found>-1){
 				var chat = this.chatRegister[found];
