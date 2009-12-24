@@ -310,7 +310,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				from: msg.getAttribute('from'),
 				to: msg.getAttribute('to'),
 				xml: (new XMLSerializer()).serializeToString(msg)
-			}
+			};
 
 			var chatState = null;
 				//console.log("chat child node ", msg.childNodes, msg.childNodes.length);
@@ -393,14 +393,16 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 			if (found>-1){
 				var chat = this.chatRegister[found];
+				chat.jid = message.from;
 				chat.recieveMessage(message);
 			}else{
 				var chatInstance = new dojox.xmpp.ChatService();
 				chatInstance.uid = dojox.xmpp.util.getBareJid(message.from);
+				chatInstance.jid = message.from;
 				chatInstance.chatid = message.chatid;
 				
 				chatInstance.firstMessage = true;
-				if(!chatState || chatState != dojox.xmpp.chat.ACTIVE_STATE){
+				if(!chatState || chatState !== dojox.xmpp.chat.ACTIVE_STATE){
 					chatInstance.useChatState = false;
 				}else{
 					chatInstance.useChatState = true;

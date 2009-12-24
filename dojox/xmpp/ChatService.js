@@ -71,10 +71,10 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 		}
 
 		if ((!msg.body || msg.body=="") && !msg.xhtml){return;}
-
+		
 		var req = {
 			xmlns: "jabber:client",
-			to: this.uid,
+			to: this.jid || this.uid,
 			from: this.session.jid + "/" + this.session.resource,
 			type: "chat"
 		}
