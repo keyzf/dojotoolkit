@@ -73,7 +73,7 @@ dojox.xmpp.xmppSession = function(props){
 	dojo.connect(this._transport, "onStreamReady", this, "onTransportReady");
 	dojo.connect(this._transport, "onTerminate", this, "onTransportTerminate");
 	dojo.connect(this._transport, "onXmppStanza", this, "handlePacket");
-	dojo.connect(this._transport, "onConnectionReset", this, "onConnectionReset");
+	dojo.connect(this._transport, "onConnectionReset", this, "_onConnectionReset");
 	dojo.connect(this._transport, "onUnableToCreateConnection", this,"onUnableToCreateConnection");
 	
 	// Register the packet handlers:
@@ -752,6 +752,11 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		onConnectionReset: function(args){
 
 		},
+
+        _onConnectionReset: function(args){
+            this.state = dojox.xmpp.xmpp.TERMINATE;
+            this.onConnectionReset(args);
+        },
 
 		onUnableToCreateConnection: function(args){
 			
