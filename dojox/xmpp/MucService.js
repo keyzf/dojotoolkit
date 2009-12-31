@@ -136,6 +136,10 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             return;
         }
 
+        // TODO: verify that we really are in the room
+        this.state = dojox.xmpp.muc.roomState.ENTERING;
+        this.nick = nick;
+
         // first do a feature check on the room before entering
         if(!this.features){
             var retval;
@@ -182,16 +186,16 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         request.append(x);
         request.append("</presence>");
 
-        // TODO: verify that we really are in the room
-        this.state = dojox.xmpp.muc.roomState.ENTERING;
-        this.nick = nick;
-
         var def = this.session.dispatchPacket(request.toString());
         return def;
     },
     
     exit: function(status){
         if(this.state === dojox.xmpp.muc.roomState.NONE){
+            return;
+        }
+        if(this.session.state == dojox.xmpp.xmpp.TERMINATE){
+            this._onExit();
             return;
         }
 
