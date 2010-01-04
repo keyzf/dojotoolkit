@@ -12,13 +12,13 @@ dojox.xmpp.chat = {
 
 dojo.declare("dojox.xmpp.ChatService", null, {
 	state: "",
-	invited: false,
+	_invited: false,
 
 	constructor: function(jid, chatid){
 		this.state="";
 		if(chatid){
 			this.chatid=chatid;
-			this.invited=true;
+			this._invited=true;
 		}
 		else{
 			this.chatid = Math.round(Math.random() * 1000000000000000);
@@ -29,7 +29,7 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 		}
 	},
 	
-	recieveMessage: function(msg,initial){
+	receiveMessage: function(msg,initial){
 		if (msg&&!initial){
 			this.onNewMessage(msg);
 		}
@@ -37,7 +37,7 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 
 	setSession: function(session){
 		this.session = session;
-		this.invite();
+		this._invite();
 	},
 
 	setState: function(state){
@@ -46,8 +46,8 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 		}
 	},
 	
-	invite: function(){
-		if (this.invited){return;}
+	_invite: function(){
+		if (this._invited){return;}
 		var req = {
 			xmlns: "jabber:client",
 			to: this.uid,
@@ -63,7 +63,7 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 			"</message>");
 		this.session.dispatchPacket(request.toString());
 
-		this.invited = true;
+		this._invited = true;
 		this.onInvite(this.uid);
 		this.setState(dojox.xmpp.chat.CHAT_STATE_NS);
 	},
