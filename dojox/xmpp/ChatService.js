@@ -12,10 +12,21 @@ dojox.xmpp.chat = {
 
 dojo.declare("dojox.xmpp.ChatService", null, {
 	state: "",
+	invited: false,
 
-	constructor: function(){
+	constructor: function(jid, chatid){
 		this.state="";
-		this.chatid = Math.round(Math.random() * 1000000000000000);
+		if(chatid){
+			this.chatid=chatid;
+			this.invited=true;
+		}
+		else{
+			this.chatid = Math.round(Math.random() * 1000000000000000);
+		}
+		if(jid){
+			this.jid=jid;
+			this.uid=dojox.xmpp.util.getBareJid(jid);
+		}
 	},
 	
 	recieveMessage: function(msg,initial){
@@ -26,6 +37,7 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 
 	setSession: function(session){
 		this.session = session;
+		this.invite();
 	},
 
 	setState: function(state){
@@ -34,16 +46,8 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 		}
 	},
 	
-	invite: function(contact){
-		if (this.uid){return;}	
-
-
-		if(!contact || contact==''){
-			throw new Error("ChatService::invite() contact is NULL");
-		}
-
-		this.uid = contact;
-
+	invite: function(){
+		if (this.invited){return;}
 		var req = {
 			xmlns: "jabber:client",
 			to: this.uid,
@@ -59,7 +63,8 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 			"</message>");
 		this.session.dispatchPacket(request.toString());
 
-		this.onInvite(contact);
+		this.invited = true;
+		this.onInvite(this.uid);
 		this.setState(dojox.xmpp.chat.CHAT_STATE_NS);
 	},
 
