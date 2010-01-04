@@ -390,25 +390,21 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			} 
 
             if ((!message.body || message.body=="") && !message.xhtml) {return;}
-
+			var chatInstance;
 			if (found>-1){
-				var chat = this.chatRegister[found];
-				chat.jid = message.from;
-				chat.recieveMessage(message);
-			}else{
-				var chatInstance = new dojox.xmpp.ChatService();
-				chatInstance.uid = dojox.xmpp.util.getBareJid(message.from);
+				chatInstance = this.chatRegister[found];
 				chatInstance.jid = message.from;
-				chatInstance.chatid = message.chatid;
-				
+			}else{
+				chatInstance= new dojox.xmpp.ChatService(message.from, message.chatid);
 				chatInstance.firstMessage = true;
 				if(!chatState || chatState !== dojox.xmpp.chat.ACTIVE_STATE){
 					chatInstance.useChatState = false;
 				}else{
 					chatInstance.useChatState = true;
 				}
-				this.registerChatInstance(chatInstance, message);
+				this.registerChatInstance(chatInstance);
 			}
+			chatInstance.recieveMessage(message);
 		},
 
 		isMucJid: function(jid){
@@ -439,11 +435,10 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			//console.log("xmppSession::simpleMessageHandler() ", msg);
 		},
 
-		registerChatInstance: function(chatInstance, message){
+		registerChatInstance: function(chatInstance){
 			chatInstance.setSession(this);
 			this.chatRegister.push(chatInstance);
-			this.onRegisterChatInstance(chatInstance, message);
-			chatInstance.recieveMessage(message,true);
+			this.onRegisterChatInstance(chatInstance);
 		},
 
 		registerMucInstance: function(mucInstance){
