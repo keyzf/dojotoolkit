@@ -404,7 +404,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				}
 				this.registerChatInstance(chatInstance);
 			}
-			chatInstance.recieveMessage(message);
+			chatInstance.receiveMessage(message);
 		},
 
 		isMucJid: function(jid){
@@ -561,7 +561,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			if(msg.getAttribute('to')){
 				var jid = this.getBareJid(msg.getAttribute('to'));
 				if(jid != this.jid) {
-					//console.log("xmppService::presenceUpdate Update Recieved with wrong address - ",jid);
+					//console.log("xmppService::presenceUpdate Update Received with wrong address - ",jid);
 					return;
 				}
 			}
@@ -740,7 +740,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			this.presenceService.publish({show: dojox.xmpp.presence.STATUS_ONLINE});
 		},
 
-		onRegisterChatInstance: function(chatInstance, message){
+		onRegisterChatInstance: function(chatInstance){
 			////console.log("xmppSession::onRegisterChatInstance()");
 		},
 
