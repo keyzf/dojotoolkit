@@ -187,7 +187,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		},
 
 		close: function(){
-			this.state = dojox.xmpp.xmpp.TERMINATE;
+			this.setState(dojox.xmpp.xmpp.TERMINATE);
 			this._transport.close("unavailable");	
 		},
 
@@ -687,6 +687,9 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		onLogin: function(){ 
 			////console.log("xmppSession::onLogin()");
 			//this.retrieveRoster();
+			this.chatRegister=[];
+			this.mucRegister=[];
+			this.roster=[];
 			this.rosterStore = new dojox.xmpp.im.RosterStore(this);
 			this.setState(dojox.xmpp.xmpp.ACTIVE); // For backwards compatibilty. To be removed in 2.0.
 		},
@@ -749,6 +752,8 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		},
 
         _onConnectionReset: function(args){
+            // not calling setState since we do not want to trigger onTerminate
+            // TODO: setState should handle such cases
             this.state = dojox.xmpp.xmpp.TERMINATE;
             this.onConnectionReset(args);
         },
