@@ -647,10 +647,11 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		setState: function(state, message){
 			if (this.state != state){
-				if (this["on"+state]){
-					this["on"+state](state, this.state, message);
-				}	
+				var oldState = this.state;
 				this.state=state;
+				if (this["on"+state]){
+					this["on"+state](state, oldState, message);
+				}	
 			}
 		},
 
