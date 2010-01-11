@@ -358,7 +358,9 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			});
 			
 			var found = -1, i, l, ci;
-			if(message.chatid){
+			// Removed the following code since it fucks up when there's multiple resources
+			/*if(message.chatid){
+				console.log("setting ci using message.chatid");
 				for(i=0, l=this.chatRegister.length; i< l; i++) {
 					ci = this.chatRegister[i];
 					////console.log("ci.chatid: ", ci.chatid, message.chatid);
@@ -367,7 +369,8 @@ dojo.extend(dojox.xmpp.xmppSession, {
 						break;	
 					}
 				}
-			} else {
+				console.log("found set to ", found);
+			} else {*/
 				var bareJid = dojox.xmpp.util.getBareJid(message.from);
 				for(var i=0, l=this.chatRegister.length; i<l; i++) {
 					ci = this.chatRegister[i];
@@ -375,8 +378,8 @@ dojo.extend(dojox.xmpp.xmppSession, {
 						found = i;
 					}
 				}
-			}	
-
+			//}
+			
 			if (found>-1){
 				var chat = this.chatRegister[found];
 				chat.useChatState = (chatState != null) ? true : false;
@@ -387,13 +390,12 @@ dojo.extend(dojox.xmpp.xmppSession, {
 						chat.firstMessage = false;
 					}
 				}
-			} 
+			}
 
             if ((!message.body || message.body=="") && !message.xhtml) {return;}
 			var chatInstance;
 			if (found>-1){
 				chatInstance = this.chatRegister[found];
-				chatInstance.jid = message.from;
 			}else{
 				chatInstance= new dojox.xmpp.ChatService(message.from, message.chatid);
 				chatInstance.firstMessage = true;
@@ -404,6 +406,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				}
 				this.registerChatInstance(chatInstance);
 			}
+            chatInstance.jid = message.from;
 			chatInstance.receiveMessage(message);
 		},
 

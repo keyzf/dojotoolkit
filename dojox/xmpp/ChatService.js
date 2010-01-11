@@ -31,6 +31,7 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 	
 	receiveMessage: function(msg,initial){
 		if (msg&&!initial){
+			this.jid = msg.from;
 			this.onNewMessage(msg);
 		}
 	},
@@ -83,7 +84,7 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 			from: this.session.jid + "/" + this.session.resource,
 			type: "chat"
 		}
-
+		
 		var message = new dojox.string.Builder(dojox.xmpp.util.createElement("message",req,false));
 
 		var html = dojox.xmpp.util.createElement("html", { "xmlns":dojox.xmpp.xmpp.XHTML_IM_NS},false)
@@ -126,7 +127,7 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 		
 		var req={
 			xmlns: "jabber:client",
-			to: this.uid,
+			to: this.jid || this.uid,
 			from: this.session.jid + "/" + this.session.resource,
 			type: "chat"
 		}
