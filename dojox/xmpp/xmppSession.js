@@ -539,7 +539,8 @@ dojo.extend(dojox.xmpp.xmppSession, {
 						}
 					}
 					if(!found && (n.getAttribute('subscription')!='remove')){
-						r = this.createRosterEntry(n);
+						r = this.rosterStore._createRosterEntry(n);
+						//this.rosterStore.fetch();
 						rosterItem = r;
 						state = dojox.xmpp.roster.ADDED;
 						this.roster.push(r);
