@@ -40,9 +40,7 @@ dojo.declare("dojox.xmpp.SaxStreamReader", null, {
 			var serializedXml = this._saxBuffer.toString();
 			this._saxBuffer.clear();
 			console.info("RECD: ", serializedXml);
-			setTimeout(dojo.hitch(this, function(){
-				this.onStanza(dojox.xml.parser.parse(serializedXml).documentElement);
-			}), 50);
+			this.onStanza(dojox.xml.parser.parse(serializedXml).documentElement);
 		} else {
 			if (this._saxDepth == 0) {
 				console.info("RECD: </" + nodeName + ">");
