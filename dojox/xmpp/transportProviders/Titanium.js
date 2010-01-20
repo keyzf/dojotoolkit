@@ -69,9 +69,9 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 			port: this.port
 		};
 		this.inherited(arguments,[data]);
+		this.close();
 	},
 	onConnectionReset: function(reason){
-
 		var data = {
 			reason:reason,
 			domain:this.domain,
@@ -79,10 +79,12 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 			port: this.port
 		};
 		this.inherited(arguments,[data]);
+		this.close();
 	},
 	
 	onConnectionTimedOut: function(args){
 		this.inherited(args);
+		this.close();
 	},
 	
 	close: function(reason) {
