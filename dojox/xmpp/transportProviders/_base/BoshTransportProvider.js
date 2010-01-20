@@ -77,6 +77,7 @@ dojo.declare("dojox.xmpp.transportProviders._base.BoshTransportProvider", dojox.
 	},
 	
 	close: function(reason){
+		this.inherited(arguments);
 		var rid = this._rid++;
 		var req = {
 			sid: this._sid,

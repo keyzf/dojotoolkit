@@ -49,6 +49,7 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
         this._keepalive = null;
         this._deferredRequests = {};
         this._matchTypeIdAttribute = {};
+        this.onTerminate();
 	},
 	
 	setState: function(state, message) {
@@ -94,6 +95,10 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 	},
 	onConnectionTimeOut: function(args){
 		// Event signalling that there was a connection timeout
+	},
+	
+	onTerminate: function() {
+		// Event triggered that the connection is going to be terminated. There's no way to cancel the termination.
 	},
 
 	stanzaHandler: function(msg) {
