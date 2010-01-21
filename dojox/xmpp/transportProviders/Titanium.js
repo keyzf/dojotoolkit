@@ -36,7 +36,6 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 				if (this.isErrorCall) {
 					this.isErrorCall = false;
 					this.onConnectionReset(e);
-					this.close();
 				}
 			}));
 		}
@@ -69,7 +68,6 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 			port: this.port
 		};
 		this.inherited(arguments,[data]);
-		this.close();
 	},
 	onConnectionReset: function(reason){
 		var data = {
@@ -79,7 +77,6 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 			port: this.port
 		};
 		this.inherited(arguments,[data]);
-		this.close();
 	},
 	
 	onConnectionTimedOut: function(args){
