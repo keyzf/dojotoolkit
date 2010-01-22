@@ -19,12 +19,17 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 		
         this.socket = Titanium.Network.createTCPSocket(this.server, this.port);
 		
-        this.socket.onRead(dojo.hitch(this._streamReader, "parse"));
-		
+		this.socket.onRead(dojo.hitch(this, function(data){
+			try {
+				this._streamReader.parse(data);
+			}catch(e){
+				console.error("socket.onRead: ", e);
+			}
+		}));
 		if (this.socket.onTimeout) {
-			this.socket.onTimeout(dojo.hitch(this, function(){
+			this.socket.onTimeout(dojo.hitch(this, function(e){
 				console.log("dojox.xmpp.transportProviders.Titanium: Connection Timed Out");
-				this.onConnectionTimeOut();
+				this.onConnectionTimeOut(e);
 			}));
 			
 		}
@@ -91,7 +96,7 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 				this.socket.close();
 			}
 		}catch(ex){
-			console.error("Titanium.close:: Socket already closed");
+			console.error("Titanium: close: ", ex);
 		}
 		this.socket = null;
 	},
@@ -101,7 +106,8 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 			this.inherited(arguments);
 			this.socket.write(data);
 		}catch(e){
-			console.error('Write to socket error: '+e);
+			this.socket.onError(e);
+			console.error('Titanium:_writeToSocket: ', e);
 		}
 	}
 });
