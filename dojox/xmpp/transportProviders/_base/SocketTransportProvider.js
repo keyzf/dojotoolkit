@@ -48,7 +48,11 @@ dojo.declare("dojox.xmpp.transportProviders._base.SocketTransportProvider", [doj
     
     _writeToSocket: function(data) {
         data = data.toString();
-        console.info("SEND: " + data);
+		if(data === " ") {
+            console.info("SEND: keep-alive");
+		} else {
+            console.info("SEND: " + data);
+		}
 		// To be inherited from to write to the socket
     },
     

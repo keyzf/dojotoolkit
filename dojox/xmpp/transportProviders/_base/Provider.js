@@ -102,6 +102,8 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 	},
 
 	stanzaHandler: function(msg) {
+		this._resetKeepalive();
+		
 		this.onXmppStanza(msg);
 		var key = msg.nodeName + "-" + msg.getAttribute("id");
 		var def = this._deferredRequests[key];
