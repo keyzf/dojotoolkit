@@ -44,12 +44,16 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 		console.warn("dojox.xmpp.transportProviders.<selected transport provider>.open not implemented.");
 	},
 	
-	close: function(reason) {
+	close: function(reason, /*String*/callback, /*Boolean*/isError) {
         clearTimeout(this._keepalive);
         this._keepalive = null;
         this._deferredRequests = {};
         this._matchTypeIdAttribute = {};
-        this.onTerminate();
+        if(typeof this[callback] == "function"){
+            this[callback](reason);
+        }else{
+            this.onTerminate();
+        }
 	},
 	
 	setState: function(state, message) {
