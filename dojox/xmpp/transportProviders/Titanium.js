@@ -7,9 +7,11 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 	_streamReader: null,
     _matchTypeIdAttribute: [],
     _deferredRequests: {},
+	CONSTANTS: {ERROR: -1, CLOSED: 0, OPEN: 1},
 	
 	constructor: function(config) {
 		console.log("Using dojox.xmpp.transportProviders.Titanium as transport.");
+		this._socketState = this.CONSTANTS.CLOSED;
 	},
 	
 	open: function() {
@@ -29,7 +31,7 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 		if (this.socket.onTimeout) {
 			this.socket.onTimeout(dojo.hitch(this, function(e){
 				console.log("dojox.xmpp.transportProviders.Titanium: Connection Timed Out");
-				this.onConnectionTimeOut(e);
+				this.close(e, "onConnectionTimeOut", true);
 			}));
 			
 		}
@@ -40,7 +42,7 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 			this.socket.onError(dojo.hitch(this, function(e){
 				if (this.isErrorCall) {
 					this.isErrorCall = false;
-					this.onConnectionReset(e);
+					this.close(e, "onConnectionReset", true);
 				}
 			}));
 		}
@@ -54,15 +56,16 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 		}
 		try {
 			if (this.socket.connect(this.timeOut)) {
+				this._socketState = this.CONSTANTS.OPEN;
 				this.restartStream();
 				console.log("Socket successfully connected: domain =" + this.domain + ", server =" + this.server + ", port =" + this.port);
 			}
 			else {
 				console.log("dojox.xmpp.transportProviders.Titanium: Socket failed to connect");
-				this.close();
+				this.close(null, "onUnableToCreateConnection", true);
 			}
 		}catch(e){
-			this.onUnableToCreateConnection(e);
+			this.close(e, "onUnableToCreateConnection", true);
 		}
 	},
 	onUnableToCreateConnection: function(reason){
@@ -86,27 +89,33 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 	
 	onConnectionTimedOut: function(args){
 		this.inherited(args);
-		this.close();
 	},
 	
-	close: function(reason) {
-		this.inherited(arguments);
+	close: function(reason, /*String*/callback, /*Boolean*/isError) {
+		if(isError){
+			this._socketState = this.CONSTANTS.ERROR;
+		}
 		try{
 			if( this.socket && !this.socket.isClosed()){
 				this.socket.close();
+				this._socketState = this.CONSTANTS.CLOSED;
 			}
 		}catch(ex){
 			console.error("Titanium: close: ", ex);
 		}
 		this.socket = null;
+		this.inherited(arguments);
 	},
 	
 	_writeToSocket: function(data) {
+		if(this._socketState != this.CONSTANTS.OPEN){
+			return;
+		}
 		try {
 			this.inherited(arguments);
 			this.socket.write(data);
 		}catch(e){
-			this.socket.onError(e);
+			this.close(e, "onConnectionReset", true)
 			console.error('Titanium:_writeToSocket: ', e);
 		}
 	}

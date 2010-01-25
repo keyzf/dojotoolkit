@@ -187,6 +187,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		},
 
 		close: function(){
+			this.dispatchPacket(dojox.xmpp.util.createElement("presence",{type:"unavailable",xmlns:dojox.xmpp.xmpp.CLIENT_NS},true));
 			this.setState(dojox.xmpp.xmpp.TERMINATE);
 			this._transport.close("unavailable");	
 		},
