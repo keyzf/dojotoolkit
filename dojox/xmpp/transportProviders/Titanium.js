@@ -16,11 +16,15 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 	
 	open: function() {
 		this.inherited(arguments);
-        this.timeOut = 1000;
-		this.isErrorCall = true;
-		
+        this.timeOut = 1;
+	
         this.socket = Titanium.Network.createTCPSocket(this.server, this.port);
 		
+		this.socket.onConnect(dojo.hitch(this,function(data){
+			this.restartStream();
+			console.log("Socket successfully connected: domain =" + this.domain + ", server =" + this.server + ", port =" + this.port);
+		}));
+
 		this.socket.onRead(dojo.hitch(this, function(data){
 			try {
 				this._streamReader.parse(data);
@@ -28,22 +32,22 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 				console.error("socket.onRead: ", e);
 			}
 		}));
+		
+		this.socket.onReadComplete(dojo.hitch(this, function(data){
+			console.log('Titanium: onReadComplete');
+			this.close();
+		}));
+		
 		if (this.socket.onTimeout) {
 			this.socket.onTimeout(dojo.hitch(this, function(e){
 				console.log("dojox.xmpp.transportProviders.Titanium: Connection Timed Out");
-				this.close(e, "onConnectionTimeOut", true);
+				//this.close(e, "onConnectionTimeOut", true);
 			}));
-			
 		}
         
         if (this.socket.onError) {
-			// gets called when connection is reset by peer/ connection is lost
-			// show that your connection has been disconnected on this error
 			this.socket.onError(dojo.hitch(this, function(e){
-				if (this.isErrorCall) {
-					this.isErrorCall = false;
 					this.close(e, "onConnectionReset", true);
-				}
 			}));
 		}
 
@@ -55,12 +59,10 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 			this.socket.close();
 		}
 		try {
-			if (this.socket.connect(this.timeOut)) {
+				
+			if (this.socket.connectNB(this.timeOut)) {
 				this._socketState = this.CONSTANTS.OPEN;
-				this.restartStream();
-				console.log("Socket successfully connected: domain =" + this.domain + ", server =" + this.server + ", port =" + this.port);
-			}
-			else {
+			}else {
 				console.log("dojox.xmpp.transportProviders.Titanium: Socket failed to connect");
 				this.close(null, "onUnableToCreateConnection", true);
 			}
@@ -68,6 +70,7 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 			this.close(e, "onUnableToCreateConnection", true);
 		}
 	},
+	
 	onUnableToCreateConnection: function(reason){
 		var data = {
 			reason: reason,
@@ -77,6 +80,7 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 		};
 		this.inherited(arguments,[data]);
 	},
+	
 	onConnectionReset: function(reason){
 		var data = {
 			reason:reason,
