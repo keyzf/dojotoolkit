@@ -76,7 +76,7 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         dojo.connect(session, "onRosterAdded", this, function(buddy){
             var buddyItem = this._createBuddyItem(buddy);
             this._rosterAdded(buddyItem);
-        });
+        });        
     },
     startup: function(){
         //pw.subscribe("/pw/desktop/kernel", this, this._processKernelEvent);
@@ -145,11 +145,11 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         /*dojo.connect(session, "onRosterAdded", this, function(buddy){
             var buddyItem = this._createBuddyItem(buddy);
             this._rosterAdded(buddyItem);
-        });*/
+        });*/        
         /*dojo.connect(session, "onRosterChanged", this, function(newCopy, previousCopy){
             var newBuddyItem = this._createBuddyItem(newCopy);
             var previousBuddyItem = this.getBuddyItem(previousCopy);
-            this._buddyUpdated(newBuddyItem, previousBuddyItem);
+            this._buddyUpdated(newBuddyItem, previousBuddyItem);            
         });*/
         dojo.connect(session, "onRosterRemoved", this, function(buddy){
             var buddyItem = this.getBuddyItem(buddy);
@@ -343,11 +343,9 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         //     the item that was added in the data source
         if (this._roster[buddyItem.jid]) {
             var previousBuddyItem = this._roster[buddyItem.jid];
-			console.log("updated");
             this._buddyUpdated(buddyItem, previousBuddyItem);
         }
         else {
-			console.log("added");
             this._buddyAdded(buddyItem);
         }
     },
@@ -397,6 +395,21 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         this._updateOnlineCount(buddyItem, { show: "offline" }, buddyItem.presence);
 		return groupItem;
     },
+	
+	renameRosterGroup: function(group, newGroup) {
+		for(var i in this._roster) {
+			var item = this._roster[i];
+            for(var j = 0;j < item.groups.length; j++) {
+                if (item.groups[j]==group){
+                    var previousItem = dojo.clone(item);
+                    item.groups[j] = newGroup;
+                    this._session.rosterService.updateRosterItem(item.jid, item.name, item.groups);
+                    this._buddyUpdated(item, previousItem);
+                }				
+            }
+		}
+	},
+         
     _buddyRemoved: function(buddyItem){
         // summary:
         //     This function is called when an item is deleted from the data source,
@@ -414,16 +427,16 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
             // Check for empty groups later because the notification for onDelete(group) should come after onDelete(buddy) child items.
         }
         this.onDelete(buddyItem);
-        this._removeEmptyGroups(groups);
+        this._removeEmptyGroups();
     },
-    _removeEmptyGroups: function(/*String Array*/groups){
+    _removeEmptyGroups: function() {
         // summary:
         //     Checks all the groupItems in the store and removes those without any children
-        for (var groupIndex in groups) {
-            var groupName = groups[groupIndex];
-            if (this._groups[groupName] && this._groups[groupName].children.length === 0) {
-                var groupItem = this._groups[groupName];
-                delete this._groups[groupName];
+        for (var groupName in this._groups) {
+            var groupItem = this._groups[groupName];
+            if (groupItem.children.length === 0) {
+                console.log("removing "+groupName);
+                delete groupItem;
                 this.onDelete(groupItem);
             }
         }
@@ -436,6 +449,7 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         // groupName: String
         //     name of the group for the groupItem
         var groupItem = this._groups[groupName];
+        if(!groupItem) return;
         for (var j = 0; j < groupItem.children.length; j++) {
             var item = groupItem.children[j];
             if (item.jid === buddyItem.jid) {
