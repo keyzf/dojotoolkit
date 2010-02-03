@@ -81,8 +81,14 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         dojo.connect(session, "onRosterChanged", this, function(newCopy, previousCopy){
             var newBuddyItem = this._createBuddyItem(newCopy);
             var previousBuddyItem = previousCopy; //this.getBuddyItem(previousCopy);
-            this._buddyUpdated(newBuddyItem, previousBuddyItem);            
+            this._buddyUpdated(newBuddyItem, previousBuddyItem);
         });
+
+        dojo.connect(session, "onRosterRemoved", this, function(buddy){
+            var buddyItem = this.getBuddyItem(buddy);
+            this._buddyRemoved(buddyItem);
+        });
+
     },
     startup: function(){
         //pw.subscribe("/pw/desktop/kernel", this, this._processKernelEvent);
