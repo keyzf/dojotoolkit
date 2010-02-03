@@ -94,13 +94,15 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 	onConnectionReset: function(args){
 		// Event signalling that the stream got some error
 	},
-	onUnableToCreateConnection: function(args){
+	onHostNotFound: function(args){
 		// Event signalling unable to create a connection
 	},
 	onConnectionTimeOut: function(args){
 		// Event signalling that there was a connection timeout
 	},
-	
+	onReadComplete: function(args){
+		// Event signalling that the socket was closed from the server end
+	},
 	onTerminate: function() {
 		// Event triggered that the connection is going to be terminated. There's no way to cancel the termination.
 	},
