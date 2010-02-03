@@ -76,7 +76,13 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         dojo.connect(session, "onRosterAdded", this, function(buddy){
             var buddyItem = this._createBuddyItem(buddy);
             this._rosterAdded(buddyItem);
-        });        
+        });
+
+        dojo.connect(session, "onRosterChanged", this, function(newCopy, previousCopy){
+            var newBuddyItem = this._createBuddyItem(newCopy);
+            var previousBuddyItem = previousCopy; //this.getBuddyItem(previousCopy);
+            this._buddyUpdated(newBuddyItem, previousBuddyItem);            
+        });
     },
     startup: function(){
         //pw.subscribe("/pw/desktop/kernel", this, this._processKernelEvent);
@@ -401,10 +407,9 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 			var item = this._roster[i];
             for(var j = 0;j < item.groups.length; j++) {
                 if (item.groups[j]==group){
-                    var previousItem = dojo.clone(item);
-                    item.groups[j] = newGroup;
-                    this._session.rosterService.updateRosterItem(item.jid, item.name, item.groups);
-                    this._buddyUpdated(item, previousItem);
+                    var newGroups = dojo.clone(item.groups);
+                    newGroups[j] = newGroup;
+                    this._session.rosterService.updateRosterItem(item.jid, item.name, newGroups);
                 }				
             }
 		}
