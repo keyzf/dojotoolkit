@@ -73,8 +73,10 @@ dojox.xmpp.xmppSession = function(props){
 	dojo.connect(this._transport, "onStreamReady", this, "onTransportReady");
 	dojo.connect(this._transport, "onTerminate", this, "onTransportTerminate");
 	dojo.connect(this._transport, "onXmppStanza", this, "handlePacket");
-	dojo.connect(this._transport, "onConnectionReset", this, "_onConnectionReset");
-	dojo.connect(this._transport, "onUnableToCreateConnection", this,"onUnableToCreateConnection");
+	dojo.connect(this._transport, "onConnectionReset", this, "onConnectionReset");
+	dojo.connect(this._transport, "onHostNotFound", this,"onHostNotFound");
+	dojo.connect(this._transport, "onConnectionTimeOut", this, "onConnectionTimeOut");
+	dojo.connect(this._transport, "onReadComplete", this, "onReadComplete");
 	
 	// Register the packet handlers:
 	
@@ -753,18 +755,21 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			////console.log("xmppSession::onRegisterChatInstance()");
 		},
 
-		onConnectionReset: function(args){
-
-		},
-
-        _onConnectionReset: function(args){
+		onConnectionReset: function(){
             // not calling setState since we do not want to trigger onTerminate
             // TODO: setState should handle such cases
             this.state = dojox.xmpp.xmpp.TERMINATE;
-            this.onConnectionReset(args);
-        },
+		},
 
-		onUnableToCreateConnection: function(args){
+		onHostNotFound: function(){
+			
+		},
+		
+		onConnectionTimeOut:function(){
+			
+		},
+		
+		onReadComplete: function(){
 			
 		},
 		onRegisterMucInstance: function(mucInstance){},
