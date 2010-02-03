@@ -440,9 +440,8 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         for (var groupName in this._groups) {
             var groupItem = this._groups[groupName];
             if (groupItem.children.length === 0) {
-                console.log("removing "+groupName);
-                delete groupItem;
                 this.onDelete(groupItem);
+                delete this._groups[groupName];
             }
         }
     },
