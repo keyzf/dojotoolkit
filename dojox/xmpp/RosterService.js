@@ -146,7 +146,7 @@ dojo.declare("dojox.xmpp.RosterService", null, {
 			}
 		}
 	},
-	/*
+	
 	renameRosterGroup: function(group, newGroup) {
 		var roster = this.session.roster;
 		for(var i=0;i<roster.length;i++){
@@ -163,7 +163,7 @@ dojo.declare("dojox.xmpp.RosterService", null, {
 			}
 		}
 	},
-    */
+
 	removeRosterItemFromGroup: function(jid, group){
 		if (!jid) throw new Error("Roster::addRosterItemToGroup() JID is null or undefined");
 		if (!group) throw new Error("Roster::addRosterItemToGroup() group is null or undefined");
