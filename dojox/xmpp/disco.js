@@ -8,8 +8,8 @@ dojox.xmpp.disco.info = function(/*Object*/ props){
     // props:
     //        A hash of the various parameters needed, which are described below
     // onComplete: Function
-    //        Called if the query was successful. Gets the list of childNodes
-    //        returned by the respone's <query> element as argument
+    //        Called if the query was successful. Gets the <query> node returned
+    //        by the respone as argument
     // onError: Function
     //        Called if the query was unsuccessful. Gets an error object as the
     //        single argument
@@ -43,7 +43,7 @@ dojox.xmpp.disco.info = function(/*Object*/ props){
     sessionDef.addCallback(function(res){
         if(res.getAttribute("type") === "result"){
             var queryNode = dojo.query("query", res)[0];
-            props.onComplete(queryNode.childNodes);
+            props.onComplete(queryNode);
         }else{
             var err = session.processXmppError(res);
             props.onError(err);
