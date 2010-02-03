@@ -31,9 +31,7 @@ dojo.declare("dojox.xmpp.transportProviders._base.SocketTransportProvider", [doj
                 version: "1.0"
             }, false));
         } catch(e) {
-            console.log(e);
-            console.log("Automatic retry after a second");
-            setTimeout(dojo.hitch(this, this.restartStream), 1000);
+            console.error('dojox.xmpp.transportProviders._base.SocketTransportProvider :: restartStream :: ',e);
         }
     },
     
