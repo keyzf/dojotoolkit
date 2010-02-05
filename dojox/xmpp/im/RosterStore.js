@@ -73,6 +73,20 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 			handler: dojo.hitch(this, this._presenceUpdateHandler)
 		});
 		
+		session.registerPacketHandler({
+			name: "RosterIqSetHandler",
+			condition: function(msg) {
+	            if(msg.nodeName === "iq" &&
+                msg.getAttribute("type") === "set" &&
+                msg.getElementsByTagName("query").length &&
+                msg.getElementsByTagName("query")[0].getAttribute("xmlns") === "jabber:iq:roster") {
+	                return true;
+	            }
+	            return false;
+			},
+			handler: dojo.hitch(this, "_rosterSetHandler")
+		});
+		
         dojo.connect(session, "onRosterAdded", this, function(buddy){
             var buddyItem = this._createBuddyItem(buddy);
             this._rosterAdded(buddyItem);
@@ -83,12 +97,12 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
             var previousBuddyItem = previousCopy; //this.getBuddyItem(previousCopy);
             this._buddyUpdated(newBuddyItem, previousBuddyItem);
         });
-
+        /*
         dojo.connect(session, "onRosterRemoved", this, function(buddy){
             var buddyItem = this.getBuddyItem(buddy);
             this._buddyRemoved(buddyItem);
         });
-
+        */
     },
     startup: function(){
         //pw.subscribe("/pw/desktop/kernel", this, this._processKernelEvent);
@@ -111,6 +125,108 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
             }
         }
     },
+	_rosterSetHandler: function(msg) {
+		dojo.query("item", msg).forEach(function(item) {
+			var matchedRosterItem = this._roster[item.getAttribute("jid")]; 
+			
+			if(matchedRosterItem) {
+				if(item.getAttribute("subscription") === "remove") {
+					var groupsList = [].concat(matchedRosterItem.groups);
+					dojo.forEach(groupsList, function(group){
+						this._removeBuddyItemFromGroup(matchedRosterItem, group);
+						
+						// clean up groups if they are empty
+						if (this._groups[group] && this._groups[group].children.length === 0) {
+							var groupItem = this._groups[group];
+                            this.onDelete(groupItem);
+							delete groupItem;
+						}
+					}, this);
+					
+					this.onDelete(matchedRosterItem);
+					delete matchedRosterItem;
+				} else {    // update
+					var oldRosterEntry = dojo.clone(matchedRosterItem);
+					var attributesChanged = [];
+					
+					var itemName = item.getAttribute("name");
+					if(itemName && itemName !== matchedRosterItem.name) {
+						matchedRosterItem.name = itemName;
+						attributesChanged.push("name");
+					}
+					
+					var subscription = item.getAttribute("subscription");
+                    if(subscription && subscription !== matchedRosterItem.status) {
+                        matchedRosterItem.status = subscription;
+						attributesChanged.push("status");
+                    }
+                    
+					var oldSubStatus = matchedRosterItem.substatus;
+                    matchedRosterItem.substatus = this.CONSTANTS.presence.SUBSCRIPTION_SUBSTATUS_NONE;
+                    if(item.getAttribute('ask')=='subscribe') {
+                        matchedRosterItem.substatus = this.CONSTANTS.presence.SUBSCRIPTION_REQUEST_PENDING;
+                    }
+					if(oldSubStatus !== matchedRosterItem.substatus) {
+						attributesChanged.push("substatus");
+					}
+					
+                    var groupsChanged = [], newGroups = dojo.query("group", item).map(function(groupNode) {
+						return groupNode.firstChild.nodeValue;
+					});
+					
+					console.log("Starting group changes. Initial state of this._groups:")
+					console.dir(this._groups);
+					
+					// Add user to new groups, if any.
+                    dojo.forEach(newGroups, function(group) {
+                        if(dojo.indexOf(matchedRosterItem.groups, group) === -1) {
+                            groupsChanged.push(this._putRosterEntryInGroup(matchedRosterItem, group));
+							matchedRosterItem.groups.push(group);
+							console.log("Adding ", matchedRosterItem, "to group: ", group, ". matchedRosterItem.groups = ", matchedRosterItem.groups.join(" "));
+                        }
+                    }, this);
+					
+					console.log("Completed group additions, if any. Current state of this._groups");
+                    console.dir(this._groups);
+                    
+					// Remove user from old groups if any.
+                    dojo.forEach(matchedRosterItem.groups, function(group) {
+                        if(group && dojo.indexOf(newGroups, group) === -1) {
+                            groupsChanged.push(this._removeRosterEntryFromGroup(matchedRosterItem, group));
+							matchedRosterItem.groups.splice(dojo.indexOf(matchedRosterItem.groups, group), 1);
+                            console.log("Removing ", matchedRosterItem, "from group: ", group, ". matchedRosterItem.groups = ", matchedRosterItem.groups.join(" "));
+                        }
+                    }, this);
+                    
+					console.log("Completed group removals, if any. Current state of this._groups");
+					console.dir(this._groups);
+					
+                    dojo.forEach(attributesChanged, function(attribute) {
+                        this.onSet(matchedRosterItem, attribute, oldRosterEntry[attribute], matchedRosterItem[attribute]);
+                    }, this);
+					
+					// Cleanup empty groups, if any
+					if(groupsChanged.length) {
+						this._removeEmptyGroups();
+					}
+					
+					console.log("All done. Final state of this.groups and matchedRosterItem.groups");
+					console.dir(this._groups);
+					console.dir(matchedRosterItem.groups);
+				}
+			}
+		}, this);
+		
+		// Send a result packet to the server to confirm changes
+        var req = {
+            id: msg.getAttribute("id"),
+            to: msg.getAttribute("from") || this._session.domain,
+            type: 'result',
+            from: this._session.jid + "/" + this._session.resource
+        }
+        this._session.dispatchPacket(dojox.xmpp.util.createElement("iq",req,true));
+	},
+	
     getOfflinePresence: function(jid){
         var presence = {
             from: jid,
@@ -162,11 +278,11 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
             var newBuddyItem = this._createBuddyItem(newCopy);
             var previousBuddyItem = this.getBuddyItem(previousCopy);
             this._buddyUpdated(newBuddyItem, previousBuddyItem);            
-        });*/
+        });
         dojo.connect(session, "onRosterRemoved", this, function(buddy){
             var buddyItem = this.getBuddyItem(buddy);
             this._buddyRemoved(buddyItem);
-        });
+        });*/
         dojo.connect(session, "onPresenceUpdate", this, this._updateBuddyPresence);
     },
     
@@ -401,12 +517,20 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         }
         groupItem.children.push(buddyItem);
 		
-        if (buddyItem.show) {
-            this._incrementVisibleCount(groupItem);
-        }
-        this._updateOnlineCount(buddyItem, { show: "offline" }, buddyItem.presence);
+		this._setGroupCounts(groupName);
 		return groupItem;
     },
+	
+	_removeRosterEntryFromGroup: function(buddyItem, groupName) {
+        var groupItem = this._groups[groupName];
+        if (groupItem && dojo.indexOf(groupItem.children, buddyItem) !== -1) {
+			groupItem.children.splice(dojo.indexOf(groupItem.children, buddyItem), 1);
+			
+			this._setGroupCounts(groupName);
+        }
+        
+        return groupItem;
+	},
 	
 	renameRosterGroup: function(group, newGroup) {
 		for(var i in this._roster) {
@@ -445,10 +569,14 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         //     Checks all the groupItems in the store and removes those without any children
         for (var groupName in this._groups) {
             var groupItem = this._groups[groupName];
-            if (groupItem.children.length === 0) {
-                this.onDelete(groupItem);
+			console.log("Trying group removal for: ", groupName);
+            if (this._groups[groupName].children.length === 0) {
+				this.onDelete(this._groups[groupName]);
                 delete this._groups[groupName];
-            }
+            } else {
+				console.log("Can't remove group ", groupName, " since group is not empty. Group object follows:");
+				console.dir(groupItem);
+			}
         }
     },
     _removeBuddyItemFromGroup: function(buddyItem, groupName){
@@ -463,27 +591,10 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         for (var j = 0; j < groupItem.children.length; j++) {
             var item = groupItem.children[j];
             if (item.jid === buddyItem.jid) {
-                if (item.show) {
-                    this._decrementVisibleCount(groupItem);
-                }
                 groupItem.children.splice(j, 1);
-                this._updateOnlineCount(buddyItem, buddyItem.presence, { show: "offline" });
+				this._setGroupCounts(groupName);
                 this.onSet(groupItem);
                 break;
-            }
-        }
-    },
-    _updateOnlineCount: function(buddyItem, oldPresence, newPresence) {
-        if ((oldPresence.show === "offline" || newPresence.show === "offline") && oldPresence.show != newPresence.show) {
-            for (var i in buddyItem.groups) {
-                var groupItem = this._groups[buddyItem.groups[i]];
-                groupItem.onlineContactsCount += oldPresence.show === "offline" ? 1 : -1;
-                this.onSet(groupItem);
-            }
-            if(!buddyItem.groups.length) {
-                var groupItem = this._groups[this.CONSTANTS.DEFAULT_GROUP_NAME];
-                groupItem.onlineContactsCount += oldPresence.show === "offline" ? 1 : -1;
-                this.onSet(groupItem);
             }
         }
     },
@@ -519,7 +630,11 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
                 attribute: "presence",
                 newBuddyItem: buddyItem
             }]);
-            this._updateOnlineCount(buddyItem, oldBuddyItem.presence, buddyItem.presence);
+			if(buddyItem.groups.length) {
+                dojo.forEach(buddyItem.groups, this._setGroupCounts, this);
+			} else {
+				this._setGroupCounts(this.CONSTANTS.DEFAULT_GROUP_NAME);
+			}
         }
     },
     _buddyAdded: function(/* pw.desktop.roster.BuddyItem */buddyItem){
@@ -588,13 +703,17 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 			var oldPresence = this._roster[bareJid].presence, resources = this._roster[bareJid].resources;
 			
 			if(resources[p.resource.toString()] && (p.show === this.CONSTANTS.presence.STATUS_OFFLINE)) {
-				console.log("Deleting " + p.resource);
+				console.log("Deleting ", p.resource);
 				delete resources[p.resource];
 			} else if (p.show !== this.CONSTANTS.presence.STATUS_OFFLINE) {
 				resources[p.resource] = p;
 			}
 			this._chooseBestPresence(this._roster[bareJid]);
-			this._updateOnlineCount(this._roster[bareJid], oldPresence, this._roster[bareJid].presence);
+			if(this._roster[bareJid].groups.length) {
+                dojo.forEach(this._roster[bareJid].groups, this._setGroupCounts, this);
+			} else {
+				this._setGroupCounts(this.CONSTANTS.DEFAULT_GROUP_NAME);
+			}
             this.onSet(this._roster[bareJid], "presence", oldPresence, this._roster[bareJid].presence);
 		} else {
 			if(!this._tempPresence[bareJid]) {
@@ -790,13 +909,32 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
             }
         }
     },
-    _incrementVisibleCount: function(groupItem){
-        this._setVisibleCount(groupItem, groupItem.visibleChildrenCount + 1);
-    },
-    _decrementVisibleCount: function(groupItem){
-        this._setVisibleCount(groupItem, groupItem.visibleChildrenCount - 1);
-    },
-    _setVisibleCount: function(groupItem, count){
+	_setGroupCounts: function(groupName) {
+		var groupItem = this._groups[groupName];
+		// Update display of number of online contacts
+		var oldOnlineCount = groupItem.onlineContactsCount;
+        groupItem.onlineContactsCount = dojo.filter(groupItem.children, function(buddy) {
+            console.log(buddy, buddy.show);
+            return buddy.presence.show !== "offline";
+        }).length;
+        
+		if(oldOnlineCount !== groupItem.onlineContactsCount) {
+            this.onSet(groupItem, "onlineContactsCount", oldOnlineCount, groupItem.onlineContactsCount);
+		}
+
+        // Update display of total number of contacts
+        var oldChildrenCount = groupItem.visibleChildrenCount;
+        groupItem.visibleChildrenCount = dojo.filter(groupItem.children, function(buddy) {
+            console.log("Checking visible count for ", buddy, buddy.show);
+            return buddy.show;
+        }).length;
+        
+		if(oldChildrenCount !== groupItem.visibleChildrenCount) {
+            this.onSet(groupItem, "visibleChildrenCount", oldChildrenCount, groupItem.visibleChildrenCount);
+		}
+
+        // FIXME: Taher was updating the groupitem show as well. Not sure why. Need to check.
+        /*
         if (count >= 0 && count <= groupItem.children.length) {
             groupItem.visibleChildrenCount = count;
             var oldGroupShow = groupItem.show;
@@ -805,7 +943,8 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
                 this.onSet(groupItem, "show", oldGroupShow, groupItem.show);
             }
         }
-    },
+        */
+	},
     _filterGroupOnRosterItemChange: function(/* String */groupName, /* Boolean */ rosterItemShow){
         // summary:
         //     sets show attribute of the group item to true/false based on the number of visible child rosterItems;
@@ -814,13 +953,9 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         //     name of the group to validate filter
         // rosterItemShow: Boolean
         //     Whether this function was triggered on rosterItem shown (true) or hidden (false)
-        var groupItem = this._groups[groupName];
-        if (rosterItemShow) {
-            this._incrementVisibleCount(groupItem);
-        }
-        else {
-            this._decrementVisibleCount(groupItem);
-        }
+
+        //var groupItem = this._groups[groupName];
+		this._setGroupCounts(groupName);
     },
     getGroupStore: function(){
         var groupsData = {
