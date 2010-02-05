@@ -86,21 +86,10 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 			},
 			handler: dojo.hitch(this, "_rosterSetHandler")
 		});
-		
+		/*
         dojo.connect(session, "onRosterAdded", this, function(buddy){
             var buddyItem = this._createBuddyItem(buddy);
             this._rosterAdded(buddyItem);
-        });
-
-        dojo.connect(session, "onRosterChanged", this, function(newCopy, previousCopy){
-            var newBuddyItem = this._createBuddyItem(newCopy);
-            var previousBuddyItem = previousCopy; //this.getBuddyItem(previousCopy);
-            this._buddyUpdated(newBuddyItem, previousBuddyItem);
-        });
-        /*
-        dojo.connect(session, "onRosterRemoved", this, function(buddy){
-            var buddyItem = this.getBuddyItem(buddy);
-            this._buddyRemoved(buddyItem);
         });
         */
     },
@@ -132,8 +121,13 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 			if(matchedRosterItem) {
 				if(item.getAttribute("subscription") === "remove") {
 					var groupsList = [].concat(matchedRosterItem.groups);
+					
+					if(!groupsList.length) {
+						groupsList.push(this.CONSTANTS.DEFAULT_GROUP_NAME)
+					}
+					
 					dojo.forEach(groupsList, function(group){
-						this._removeBuddyItemFromGroup(matchedRosterItem, group);
+						this._removeRosterEntryFromGroup(matchedRosterItem, group);
 						
 						// clean up groups if they are empty
 						if (this._groups[group] && this._groups[group].children.length === 0) {
@@ -145,6 +139,11 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 					
 					this.onDelete(matchedRosterItem);
 					delete matchedRosterItem;
+					
+                    // Cleanup empty groups, if any
+                    if(groupsChanged.length) {
+                        this._removeEmptyGroups();
+                    }
 				} else {    // update
 					var oldRosterEntry = dojo.clone(matchedRosterItem);
 					var attributesChanged = [];
@@ -214,6 +213,22 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 					console.dir(this._groups);
 					console.dir(matchedRosterItem.groups);
 				}
+			} else if(item.getAttribute("subscription") === "remove") {  // This is a new entry to the roster
+				var newRosterEntry = this._createRosterEntry(item);
+				
+				if(newRosterEntry.groups.length) {
+					dojo.forEach(newRosterEntry.groups, function(groupName) {
+						this.onNew(newRosterEntry, {
+							item: this._groups[groupName],
+							attribute: "children" 
+						});
+					}, this);
+				} else {
+					this.onNew(newRosterEntry, {
+						item: this._groups[this.CONSTANTS.DEFAULT_GROUP_NAME],
+						attribute: "children"
+					});
+				}
 			}
 		}, this);
 		
@@ -227,7 +242,7 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         this._session.dispatchPacket(dojox.xmpp.util.createElement("iq",req,true));
 	},
 	
-    getOfflinePresence: function(jid){
+    _getOfflinePresence: function(jid){
         var presence = {
             from: jid,
             show: "offline",
@@ -235,74 +250,13 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         };
         return presence;
     },
-    _resetAllPresence: function(){
-        // summary:
-        //     resets the presence to offline for all buddyItems and calls onSet notifications on each of them
-        var buddyItem;
-        for (var jid in this._roster) {
-            buddyItem = this._roster[jid];
-            if (buddyItem.presence.show !== "offline" || buddyItem.presence.status !== "") {
-                this._updateBuddyPresence(this.getOfflinePresence(jid));
-            }
-        }
-    },
-    _resetRoster: function(){
-        // summary:
-        //     resets all the items in the RosterStore, effectively making it empty
-        if (this._roster) {
-            for (var jid in this._roster) {
-                var buddyItem = this._roster[jid];
-                delete this._roster[jid];
-                this.onDelete(buddyItem);
-            }
-        }
-        this._roster = {};
-        if (this._groups) {
-            for (var groupName in this._groups) {
-                var groupItem = this._groups[groupName];
-                delete this._groups[groupName];
-                this.onDelete(groupItem);
-            }
-        }
-        this._groups = {};
-    },
     _connectToActiveSession: function(){
         // summary:
         //     connect to the active session for events the store is interested in 
         var session = this._session;
-        /*dojo.connect(session, "onRosterAdded", this, function(buddy){
-            var buddyItem = this._createBuddyItem(buddy);
-            this._rosterAdded(buddyItem);
-        });*/        
-        /*dojo.connect(session, "onRosterChanged", this, function(newCopy, previousCopy){
-            var newBuddyItem = this._createBuddyItem(newCopy);
-            var previousBuddyItem = this.getBuddyItem(previousCopy);
-            this._buddyUpdated(newBuddyItem, previousBuddyItem);            
-        });
-        dojo.connect(session, "onRosterRemoved", this, function(buddy){
-            var buddyItem = this.getBuddyItem(buddy);
-            this._buddyRemoved(buddyItem);
-        });*/
         dojo.connect(session, "onPresenceUpdate", this, this._updateBuddyPresence);
     },
     
-    getBuddyItem: function(/* Object || String */buddy){
-        // summary:
-        //     returns a buddyItem from the roster that maps to the jid of passed object
-        // buddy:
-        //     object that can be mapped to a buddyItem
-        var jid;
-        if(typeof buddy == "string") {
-            jid = buddy;
-        }
-        else {
-            this._normaliseBuddy(buddy);
-            jid = buddy.jid;
-        }
-        return this._roster[jid] || this._createBuddyItem({
-            jid: jid
-        });
-    },
     getFeatures: function(){
         // summary:
         //     See dojo.data.api.Read.getFeatures()
@@ -428,73 +382,6 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         //     See dojo.data.api.Read.isItemLoaded()
         return this.isItem(something); //boolean
     },
-    _normaliseBuddy: function(/* anything */buddy){
-        // summary:
-        //     normalises the passed object to have all attributes required for a buddyItem
-        // buddy:
-        //     object that can be mapped to a buddyItem
-        if (buddy && buddy.id && typeof buddy.jid == "undefined") {
-            buddy.jid = buddy.id;
-        }
-        if (!buddy.jid) {
-            throw new Error("RosterStore._normaliseBuddy(): Invalid buddy object received");
-        }
-    },
-    _createBuddyItem: function(/* anything */buddy){
-        // summary:
-        //     creates a buddyItem for the store from the passed buddy
-        // buddy:
-        //     object that can be mapped to a buddyItem (should have a jid)
-        this._normaliseBuddy(buddy);
-        var groups = [];
-        if (buddy.groups) {
-            for (var j = 0; j < buddy.groups.length; j++) {
-                groups.push(buddy.groups[j]);
-            }
-        }
-        var buddyItem = {
-            jid: buddy.jid,
-            rosterNodeType: "contact",
-            groups: groups,
-            show: true,
-			resources: {},
-            presence: this.getOfflinePresence(buddy.jid),
-            name: buddy.name
-        };
-        return buddyItem;//pw.desktop.roster.BuddyItem
-    },
-    _rosterAdded: function(buddyItem){
-        // summary:
-        //     This function is called when an item is added in the data source,
-        //     updates the store with the new item received
-        // buddyItem: pw.desktop.roster.BuddyItem
-        //     the item that was added in the data source
-        if (this._roster[buddyItem.jid]) {
-            var previousBuddyItem = this._roster[buddyItem.jid];
-            this._buddyUpdated(buddyItem, previousBuddyItem);
-        }
-        else {
-            this._buddyAdded(buddyItem);
-        }
-    },
-    _buddyUpdated: function(buddyItem, previousBuddyItem){
-        // summary:
-        //     This function is called when an item is added in the data source,
-        //     updates the store with the new item received
-        // buddyItem: pw.desktop.roster.BuddyItem
-        //     the new item
-        // previousBuddyItem: pw.desktop.roster.BuddyItem
-        //     item that was updated with the new item
-        buddyItem.presence = previousBuddyItem.presence;
-        this._buddyRemoved(previousBuddyItem);
-        this._buddyAdded(buddyItem);
-		/*
-        pw.publish("/pw/desktop/roster/buddyUpdated/" + buddyItem.jid, [{
-            oldBuddyItem: previousBuddyItem,
-            newBuddyItem: buddyItem
-        }]);
-        */
-    },
     _putRosterEntryInGroup: function(buddyItem, groupName){
         // summary:
         //     associate the buddyItem to a groupItem
@@ -544,26 +431,7 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
             }
 		}
 	},
-         
-    _buddyRemoved: function(buddyItem){
-        // summary:
-        //     This function is called when an item is deleted from the data source,
-        //     updates the store by removing the item received
-        // buddyItem: pw.desktop.roster.BuddyItem
-        //     the item that was deleted from the data source
-        delete this._roster[buddyItem.jid];
-        var groups = buddyItem.groups;
-        if (groups.length === 0) {
-            groups.push(this.CONSTANTS.DEFAULT_GROUP_NAME);
-        }
-        for (var j = 0; j < groups.length; j++) {
-            var groupName = groups[j];
-            this._removeBuddyItemFromGroup(buddyItem, groupName);
-            // Check for empty groups later because the notification for onDelete(group) should come after onDelete(buddy) child items.
-        }
-        this.onDelete(buddyItem);
-        this._removeEmptyGroups();
-    },
+
     _removeEmptyGroups: function() {
         // summary:
         //     Checks all the groupItems in the store and removes those without any children
@@ -578,39 +446,6 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 				console.dir(groupItem);
 			}
         }
-    },
-    _removeBuddyItemFromGroup: function(buddyItem, groupName){
-        // summary:
-        //     disassociate the buddyItem from a groupItem
-        // buddyItem: pw.desktop.roster.BuddyItem
-        //     the buddyItem to be removed
-        // groupName: String
-        //     name of the group for the groupItem
-        var groupItem = this._groups[groupName];
-        if(!groupItem) return;
-        for (var j = 0; j < groupItem.children.length; j++) {
-            var item = groupItem.children[j];
-            if (item.jid === buddyItem.jid) {
-                groupItem.children.splice(j, 1);
-				this._setGroupCounts(groupName);
-                this.onSet(groupItem);
-                break;
-            }
-        }
-    },
-    copyBuddyToGroups: function(buddyItem, groupNames){
-        var rosterService = pw.desktop.getKernel().getCurrentUserSession().getSession().rosterService;
-        for (var i in groupNames) {
-            rosterService.addRosterItemToGroup(buddyItem.jid, groupNames[i]);
-        }
-    },
-    moveBuddyToGroups: function(buddyItem, groupNames){
-        var currentGroups = buddyItem.groups;
-        var rosterService = pw.desktop.getKernel().getCurrentUserSession().getSession().rosterService;
-        for (var i in currentGroups) {
-            rosterService.removeRosterItemFromGroup(buddyItem.jid, currentGroups[i]);
-        }
-        this.copyBuddyToGroups(buddyItem, groupNames);
     },
     _updateBuddyPresence: function(p){
         // summary:
@@ -636,32 +471,6 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 				this._setGroupCounts(this.CONSTANTS.DEFAULT_GROUP_NAME);
 			}
         }
-    },
-    _buddyAdded: function(/* pw.desktop.roster.BuddyItem */buddyItem){
-        // summary:
-        //     This function is called when an item is added to the data source,
-        //     updates the store by adding the item received
-        // buddyItem: pw.desktop.roster.BuddyItem
-        //     the item that was added to the data source
-        this._roster[buddyItem.jid] = buddyItem;
-        if (buddyItem) {
-            if (buddyItem.groups.length === 0) {
-                this.onNew(buddyItem, {
-					item: this._putRosterEntryInGroup(buddyItem, this.CONSTANTS.DEFAULT_GROUP_NAME),
-					attribute: "children"
-				});
-            }
-            else {
-                for (var j = 0; j < buddyItem.groups.length; j++) {
-                    var groupName = buddyItem.groups[j];
-                    this.onNew(buddyItem, {
-						item: this._putRosterEntryInGroup(buddyItem, groupName),
-						attribute: "children"
-					});
-                }
-            }
-        }
-        this._filterBuddyItem(buddyItem);
     },
 	
 	_presenceUpdateHandler: function(msg) {
@@ -1017,8 +826,6 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 	setValues: function(item, attribute, values) {
 		this._assertIsItem(item);
 		this._assertIsAttribute(attribute);
-		
-		
 		
 		console.log("setValues ", item, attribute, values);
 	},
