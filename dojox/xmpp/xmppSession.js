@@ -78,23 +78,6 @@ dojox.xmpp.xmppSession = function(props){
 	dojo.connect(this._transport, "onConnectionTimeOut", this, "onConnectionTimeOut");
 	dojo.connect(this._transport, "onReadComplete", this, "onReadComplete");
 	
-	// Register the packet handlers:
-	
-    this.registerPacketHandler({
-		name: "iqSetForRoster",
-		//condition: "iq[type='set'] query[xmlns='jabber:iq:roster']",
-		condition: function(msg) {
-			if(msg.nodeName === "iq" && msg.getAttribute("type") === "set" && msg.getElementsByTagName("query").length && msg.getElementsByTagName("query")[0].getAttribute("xmlns") === "jabber:iq:roster") {
-				return true;
-			}
-			return false;
-		},
-		handler: dojo.hitch(this, function(msg) {
-	        this.rosterSetHandler(msg.getElementsByTagName("query")[0]);
-	        this.sendIqResult(msg.getAttribute("id"), msg.getAttribute("from"));
-		})
-    });
-	
 	this.registerPacketHandler({
 		name: "iq",
 		//condition: "iq[type='set']:not(query)",
@@ -479,89 +462,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				from: this.jid + "/" + this.resource
 			}
 			this.dispatchPacket(dojox.xmpp.util.createElement("iq",req,true));
-		},
-
-		rosterSetHandler: function(elem){
-			//console.log("xmppSession::rosterSetHandler()", arguments);
-			for (var i=0; i<elem.childNodes.length;i++){
-				var n = elem.childNodes[i];
-			
-				if (n.nodeName=="item"){
-					var found = false;
-					var state = -1;
-					var rosterItem = null;
-					var previousCopy = null;
-					for(var x=0; x<this.roster.length;x++){
-						var r = this.roster[x];
-						if(n.getAttribute('jid')==r.jid){
-							found = true;
-							if(n.getAttribute('subscription')=='remove'){
-								//remove the item
-								rosterItem = {
-									id: r.jid,
-									name: r.name,
-									groups:[]
-								}
-
-								for (var y=0;y<r.groups.length;y++){
-									rosterItem.groups.push(r.groups[y]);
-								}
-
-								this.roster.splice(x,1);
-								state = dojox.xmpp.roster.REMOVED;
-
-							} else { //update
-								previousCopy = dojo.clone(r);
-								var itemName = n.getAttribute('name');
-								if (itemName){
-									this.roster[x].name = itemName;
-								}	
-
-								r.groups = [];
-
-								if (n.getAttribute('subscription')){
-									r.status = n.getAttribute('subscription');
-								}
-						
-								r.substatus = dojox.xmpp.presence.SUBSCRIPTION_SUBSTATUS_NONE;
-								if(n.getAttribute('ask')=='subscribe'){
-									r.substatus = dojox.xmpp.presence.SUBSCRIPTION_REQUEST_PENDING;
-								}
-					
-								for(var y=0;y<n.childNodes.length;y++){
-									var groupNode = n.childNodes[y];
-									if ((groupNode.nodeName=='group')&&(groupNode.hasChildNodes())){
-										var gname = groupNode.firstChild.nodeValue;
-										r.groups.push(gname);
-									}
-								}
-								rosterItem = r;
-								state = dojox.xmpp.roster.CHANGED;
-							}
-							break;
-						}
-					}
-					if(!found && (n.getAttribute('subscription')!='remove')){
-						r = this.rosterStore._createRosterEntry(n);
-						//this.rosterStore.fetch();
-						rosterItem = r;
-						state = dojox.xmpp.roster.ADDED;
-						this.roster.push(r);
-					}
-				
-					switch(state){
-						case dojox.xmpp.roster.ADDED:
-							this.onRosterAdded(rosterItem);
-							break;
-						case dojox.xmpp.roster.REMOVED:
-							this.onRosterRemoved(rosterItem);
-							break;
-						case dojox.xmpp.roster.CHANGED:
-							this.onRosterChanged(rosterItem, previousCopy);
-							break;
-					}	
-				}	
-			}
 		},
 
 		presenceUpdate: function(msg){

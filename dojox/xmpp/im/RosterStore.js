@@ -127,23 +127,22 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 					}
 					
 					dojo.forEach(groupsList, function(group){
-						this._removeRosterEntryFromGroup(matchedRosterItem, group);
-						
+						this._removeRosterEntryFromGroup(matchedRosterItem, group, true);
+						/*
 						// clean up groups if they are empty
 						if (this._groups[group] && this._groups[group].children.length === 0) {
 							var groupItem = this._groups[group];
+                            delete this._groups[group];
                             this.onDelete(groupItem);
-							delete groupItem;
 						}
+						*/
 					}, this);
 					
 					this.onDelete(matchedRosterItem);
 					delete matchedRosterItem;
 					
                     // Cleanup empty groups, if any
-                    if(groupsChanged.length) {
-                        this._removeEmptyGroups();
-                    }
+                    this._removeEmptyGroups();
 				} else {    // update
 					var oldRosterEntry = dojo.clone(matchedRosterItem);
 					var attributesChanged = [];
@@ -169,36 +168,28 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 						attributesChanged.push("substatus");
 					}
 					
-                    var groupsChanged = [], newGroups = dojo.query("group", item).map(function(groupNode) {
-						return groupNode.firstChild.nodeValue;
+                    var groupsChanged = [], newGroups = dojo.query("group", item).filter(function(groupNode) {
+						return !!groupNode.firstChild;    // Ensure that the group node has children
+					}).map(function(groupNode) {
+                        return groupNode.firstChild.nodeValue;
 					});
 					
-					console.log("Starting group changes. Initial state of this._groups:")
-					console.dir(this._groups);
-					
+                    // Remove user from old groups if any.
+                    dojo.forEach(matchedRosterItem.groups, function(group) {
+                        if(group && dojo.indexOf(newGroups, group) === -1) {
+                            groupsChanged.push(this._removeRosterEntryFromGroup(matchedRosterItem, group, true));
+                            matchedRosterItem.groups.splice(dojo.indexOf(matchedRosterItem.groups, group), 1);
+                        }
+                    }, this);
+                    
 					// Add user to new groups, if any.
                     dojo.forEach(newGroups, function(group) {
                         if(dojo.indexOf(matchedRosterItem.groups, group) === -1) {
-                            groupsChanged.push(this._putRosterEntryInGroup(matchedRosterItem, group));
+                            groupsChanged.push(this._putRosterEntryInGroup(matchedRosterItem, group, true));
 							matchedRosterItem.groups.push(group);
-							console.log("Adding ", matchedRosterItem, "to group: ", group, ". matchedRosterItem.groups = ", matchedRosterItem.groups.join(" "));
+							this.onNew(matchedRosterItem, this._groups[group]);
                         }
                     }, this);
-					
-					console.log("Completed group additions, if any. Current state of this._groups");
-                    console.dir(this._groups);
-                    
-					// Remove user from old groups if any.
-                    dojo.forEach(matchedRosterItem.groups, function(group) {
-                        if(group && dojo.indexOf(newGroups, group) === -1) {
-                            groupsChanged.push(this._removeRosterEntryFromGroup(matchedRosterItem, group));
-							matchedRosterItem.groups.splice(dojo.indexOf(matchedRosterItem.groups, group), 1);
-                            console.log("Removing ", matchedRosterItem, "from group: ", group, ". matchedRosterItem.groups = ", matchedRosterItem.groups.join(" "));
-                        }
-                    }, this);
-                    
-					console.log("Completed group removals, if any. Current state of this._groups");
-					console.dir(this._groups);
 					
                     dojo.forEach(attributesChanged, function(attribute) {
                         this.onSet(matchedRosterItem, attribute, oldRosterEntry[attribute], matchedRosterItem[attribute]);
@@ -208,12 +199,8 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 					if(groupsChanged.length) {
 						this._removeEmptyGroups();
 					}
-					
-					console.log("All done. Final state of this.groups and matchedRosterItem.groups");
-					console.dir(this._groups);
-					console.dir(matchedRosterItem.groups);
 				}
-			} else if(item.getAttribute("subscription") === "remove") {  // This is a new entry to the roster
+			} else if(item.getAttribute("subscription") !== "remove") {  // This is a new entry to the roster
 				var newRosterEntry = this._createRosterEntry(item);
 				
 				if(newRosterEntry.groups.length) {
@@ -310,8 +297,8 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
     getValues: function(/* item */item, /* attribute-name-string */ attribute){
         // summary:
         //     See dojo.data.api.Read.getValues()
-        this._assertIsItem(item);
-        this._assertIsAttribute(attribute);
+		this._assertIsItem(item);
+		this._assertIsAttribute(attribute);
         return item[attribute] || []; // Array
     },
     getAttributes: function(/* item */item){
@@ -382,14 +369,15 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         //     See dojo.data.api.Read.isItemLoaded()
         return this.isItem(something); //boolean
     },
-    _putRosterEntryInGroup: function(buddyItem, groupName){
+    _putRosterEntryInGroup: function(buddyItem, groupName, fireOnSetForGroup){
         // summary:
         //     associate the buddyItem to a groupItem
         // buddyItem: pw.desktop.roster.BuddyItem
         //     the buddyItem to be added
         // groupName: String
         //     name of the group for the groupItem
-        var groupItem = this._groups[groupName];
+        var groupItem = this._groups[groupName], newlyCreated = true, oldGroupItemChildren;
+		
         if (!groupItem) {
             groupItem = {
 	            name: groupName,
@@ -400,18 +388,34 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
                 children: []
 			};
             this._groups[groupName] = groupItem;
+			oldGroupItemChildren = null;
             //this.onNew(groupItem);
-        }
+        } else {
+			newlyCreated = false;
+			oldGroupItemChildren = [].concat(groupItem.children);
+		}
         groupItem.children.push(buddyItem);
 		
 		this._setGroupCounts(groupName);
+		
+		if(fireOnSetForGroup) {
+			if(newlyCreated) {
+				this.onNew(groupItem);
+			} else {
+                this.onSet(groupItem, "children", oldGroupItemChildren, groupItem.children);
+			}
+		}
+		
 		return groupItem;
     },
 	
-	_removeRosterEntryFromGroup: function(buddyItem, groupName) {
+	_removeRosterEntryFromGroup: function(buddyItem, groupName, fireOnDelete) {
         var groupItem = this._groups[groupName];
         if (groupItem && dojo.indexOf(groupItem.children, buddyItem) !== -1) {
-			groupItem.children.splice(dojo.indexOf(groupItem.children, buddyItem), 1);
+			var deletedBuddy = groupItem.children.splice(dojo.indexOf(groupItem.children, buddyItem), 1);
+			if(fireOnDelete) {
+				this.onDelete(deletedBuddy[0]);
+			}
 			
 			this._setGroupCounts(groupName);
         }
@@ -437,13 +441,11 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         //     Checks all the groupItems in the store and removes those without any children
         for (var groupName in this._groups) {
             var groupItem = this._groups[groupName];
-			console.log("Trying group removal for: ", groupName);
+			
             if (this._groups[groupName].children.length === 0) {
-				this.onDelete(this._groups[groupName]);
+				var deletedGroup = this._groups[groupName];
                 delete this._groups[groupName];
-            } else {
-				console.log("Can't remove group ", groupName, " since group is not empty. Group object follows:");
-				console.dir(groupItem);
+				this.onDelete(deletedGroup);
 			}
         }
     },
@@ -512,7 +514,6 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 			var oldPresence = this._roster[bareJid].presence, resources = this._roster[bareJid].resources;
 			
 			if(resources[p.resource.toString()] && (p.show === this.CONSTANTS.presence.STATUS_OFFLINE)) {
-				console.log("Deleting ", p.resource);
 				delete resources[p.resource];
 			} else if (p.show !== this.CONSTANTS.presence.STATUS_OFFLINE) {
 				resources[p.resource] = p;
@@ -723,7 +724,6 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
 		// Update display of number of online contacts
 		var oldOnlineCount = groupItem.onlineContactsCount;
         groupItem.onlineContactsCount = dojo.filter(groupItem.children, function(buddy) {
-            console.log(buddy, buddy.show);
             return buddy.presence.show !== "offline";
         }).length;
         
@@ -734,7 +734,6 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
         // Update display of total number of contacts
         var oldChildrenCount = groupItem.visibleChildrenCount;
         groupItem.visibleChildrenCount = dojo.filter(groupItem.children, function(buddy) {
-            console.log("Checking visible count for ", buddy, buddy.show);
             return buddy.show;
         }).length;
         
