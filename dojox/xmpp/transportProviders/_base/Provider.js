@@ -94,7 +94,7 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 	onConnectionReset: function(args){
 		// Event signalling that the stream got some error
 	},
-	onHostNotFound: function(args){
+	onConnectionError: function(args){
 		// Event signalling unable to create a connection
 	},
 	onConnectionTimeOut: function(args){
