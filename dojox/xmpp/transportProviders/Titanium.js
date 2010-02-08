@@ -34,8 +34,10 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 		}));
 		
 		this.socket.onReadComplete(dojo.hitch(this, function(e){
-			console.error('Titanium: onReadComplete');
-			this.close(e,'onReadComplete',true); // need to see if onReadComplete callback expects a param
+			if (this._socketState !== this.CONSTANTS.OPEN) {
+				console.error('Titanium: onReadComplete');
+				this.close(e, 'onReadComplete', true); // need to see if onReadComplete callback expects a param
+			}
 		}));
 		
 		if (this.socket.onTimeout) {
@@ -77,6 +79,7 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 
 	
 	close: function(reason, /*String*/callback, /*Boolean*/isError) {
+		
 		if(isError===true){
 			this._socketState = this.CONSTANTS.ERROR;
 		}

@@ -743,7 +743,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		},
 
 		onTerminate: function(newState, oldState, message){
-			//console.log("xmppSession::onTerminate()", newState, oldState, message);
+
 		},
 
 		onActive: function(){
