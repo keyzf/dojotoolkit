@@ -26,8 +26,7 @@ dojox.xmpp.transportManager = new function() {
 			throw new Error("Need a configuration object to decide what transport to use and to instantiate it.")
 		}
 		
-		console.log(config);
-		
+	
 		try {
 			return new (adapterRegistry.match(config))(config);
 		} catch(e) {

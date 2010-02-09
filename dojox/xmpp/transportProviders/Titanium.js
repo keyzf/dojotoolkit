@@ -70,6 +70,7 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 				console.log('Attempting to connect');
 			}else {
 				console.log("dojox.xmpp.transportProviders.Titanium: Socket failed to connect");
+				alert('Titanium error while connecting');
 				this.close(null, "onConnectionError", true);
 			}
 		}catch(e){
