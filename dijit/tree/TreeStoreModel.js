@@ -257,9 +257,9 @@ dojo.declare(
 			if(!parentInfo){
 				return;
 			}
-			this.getChildren(parentInfo, dojo.hitch(this, function(children){
+			this.getChildren(parentInfo.item, dojo.hitch(this, function(children){
 				// NOTE: maybe can be optimized since parentInfo contains the new and old attribute value
-				this.onChildrenChange(parentInfo, children);
+				this.onChildrenChange(parentInfo.item, children);
 			}));
 		},
 		
