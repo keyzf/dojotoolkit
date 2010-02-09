@@ -187,7 +187,10 @@ dojo.declare("dojox.xmpp.im.RosterStore", null, {
                         if(dojo.indexOf(matchedRosterItem.groups, group) === -1) {
                             groupsChanged.push(this._putRosterEntryInGroup(matchedRosterItem, group, true));
 							matchedRosterItem.groups.push(group);
-							this.onNew(matchedRosterItem, this._groups[group]);
+							this.onNew(matchedRosterItem, {
+                                item: this._groups[group],
+                                attribute: "children" 
+                            });
                         }
                     }, this);
 					
