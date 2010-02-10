@@ -519,9 +519,9 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
         }
     },
     
-	_createRosterEntrySkeleton: function(jid, status, substatus) {
+	_createRosterEntrySkeleton: function(jid, name, status, substatus) {
         return {
-            name: jid,
+            name: name || jid,
             rosterNodeType: "contact",
             show: true,
             resources: {},
@@ -538,7 +538,8 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
         var presenceNs = dojox.xmpp.presence, jid = dojox.xmpp.util.getBareJid(elem.getAttribute("jid"));
         
 		var re = this._createRosterEntrySkeleton(
-            elem.getAttribute("name") || jid,
+            jid,
+            elem.getAttribute("name"),
 			elem.getAttribute("subscription"),
 			((elem.getAttribute("ask")=="subscribe")?presenceNs.SUBSCRIPTION_REQUEST_PENDING:presenceNs.SUBSCRIPTION_SUBSTATUS_NONE)
 		);
