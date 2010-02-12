@@ -73,7 +73,7 @@ dojox.xmpp.xmppSession = function(props){
 	dojo.connect(this._transport, "onStreamReady", this, "onTransportReady");
 	dojo.connect(this._transport, "onTerminate", this, "onTransportTerminate");
 	dojo.connect(this._transport, "onXmppStanza", this, "handlePacket");
-	dojo.connect(this._transport, "onConnectionReset", this, "onConnectionReset");
+	dojo.connect(this._transport, "onHostNotFound", this, "onHostNotFound");
 	dojo.connect(this._transport, "onConnectionError", this,"onConnectionError");
 	dojo.connect(this._transport, "onConnectionTimeOut", this, "onConnectionTimeOut");
 	dojo.connect(this._transport, "onReadComplete", this, "onReadComplete");
@@ -655,7 +655,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			////console.log("xmppSession::onRegisterChatInstance()");
 		},
 
-		onConnectionReset: function(){
+		onHostNotFound: function(){
             // not calling setState since we do not want to trigger onTerminate
             // TODO: setState should handle such cases
             this.state = dojox.xmpp.xmpp.TERMINATE;
