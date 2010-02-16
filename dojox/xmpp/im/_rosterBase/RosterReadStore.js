@@ -175,6 +175,14 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
                         }
                     }, this);
                     
+                    // Add user to the default group, if he is not a member of any group.
+                    if(!matchedRosterItem.groups.length) {
+                        this.onNew(matchedRosterItem, {
+                            item: this._groups[this.CONSTANTS.DEFAULT_GROUP_NAME],
+                            attribute: "children"
+                        });
+                    }
+
                     dojo.forEach(attributesChanged, function(attribute) {
                         this.onSet(matchedRosterItem, attribute, oldRosterEntry[attribute], matchedRosterItem[attribute]);
                     }, this);
