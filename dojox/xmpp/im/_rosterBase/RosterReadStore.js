@@ -420,6 +420,19 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
         }
     },
 
+    removeRosterGroup: function(group) {
+        for(var i in this._roster) {
+            var item = this._roster[i];
+            for(var j = 0;j < item.groups.length; j++) {
+                if (item.groups[j]==group){
+                    var newGroups = dojo.clone(item.groups);
+                    newGroups.splice(j,1);
+                    this._session.rosterService.updateRosterItem(item.jid, item.name, newGroups);
+                }
+            }
+        }
+    },
+
     _removeEmptyGroups: function() {
         // summary:
         //     Checks all the groupItems in the store and removes those without any children
