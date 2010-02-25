@@ -793,34 +793,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
         // summary:
         //     See dojo.data.api.Notification.onDelete()
     },
-    
-    newItem: function(kwArgs, parent) {
-        console.log("newItem ", kwArgs, parent);
-    },
-    
-    save: function(kwArgs) {
-        console.log("save ", kwArgs);
-    },
-    
-    setValue: function(item, attribute, value) {
-        console.log("setValue ", item, attribute, value);
-    },
-    
-    setValues: function(item, attribute, values) {
-        this._assertIsItem(item);
-        this._assertIsAttribute(attribute);
-        
-        console.log("setValues ", item, attribute, values);
-    },
-    
-    revert: function() {
-        console.log("revert");
-    },
-    
-    deleteItem: function(item) {
-        console.log("deleteItem ", item);
-    },
-    
+	
     isDirty: function(item) {
         console.log("isDirty ", item);
     }
