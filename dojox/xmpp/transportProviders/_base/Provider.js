@@ -49,11 +49,12 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
         this._keepalive = null;
         this._deferredRequests = {};
         this._matchTypeIdAttribute = {};
-        if(typeof this[callback] == "function"){
-            this[callback](reason);
-        }else{
-            this.onTerminate();
-        }
+		this.onTerminate(reason, isError);
+//        if(typeof this[callback] == "function"){
+//           this[callback](reason);
+//      }else{
+//         this.onTerminate();
+//    }
 	},
 	
 	setState: function(state, message) {
@@ -90,24 +91,6 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 	
 	onStreamReady: function() {
 		// Event signalling that the stream is ready to interact with
-	},
-	onConnectionReset: function(args){
-		// Event signalling that the stream got some error
-	},
-	onConnectionError: function(args){
-		// Event signalling unable to create a connection
-	},
-	onHostNotFound: function(args){
-		
-	},
-	onConnectionTimeOut: function(args){
-		// Event signalling that there was a connection timeout
-	},
-	onReadComplete: function(args){
-		// Event signalling that the socket was closed from the server end
-	},
-	onTerminate: function() {
-		// Event triggered that the connection is going to be terminated. There's no way to cancel the termination.
 	},
 
 	stanzaHandler: function(msg) {

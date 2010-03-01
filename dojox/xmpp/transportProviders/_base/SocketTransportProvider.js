@@ -37,11 +37,7 @@ dojo.declare("dojox.xmpp.transportProviders._base.SocketTransportProvider", [doj
     
     close: function(reason, /*String*/callback, /*Boolean*/isError) {
 		this.inherited(arguments);
-		/* if(typeof reason == "string") {
-            this._writeToSocket(dojox.xmpp.util.createElement("presence",{type:reason,xmlns:dojox.xmpp.xmpp.CLIENT_NS},true));
-        }*/
-		console.log("Closing Titanium transport socket.");
-		// To be inherited from, to close the socket
+		console.debug("Closing Titanium transport socket.");
     },
     
     _writeToSocket: function(data) {
