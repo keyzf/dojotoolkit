@@ -74,10 +74,10 @@ dojox.xmpp.xmppSession = function(props){
 	dojo.connect(this._transport, "onStreamReady", this, "onTransportReady");
 	dojo.connect(this._transport, "onTerminate", this, "onTransportTerminate");
 	dojo.connect(this._transport, "onXmppStanza", this, "handlePacket");
-	dojo.connect(this._transport, "onHostNotFound", this, "onHostNotFound");
-	dojo.connect(this._transport, "onConnectionError", this,"onConnectionError");
-	dojo.connect(this._transport, "onConnectionTimeOut", this, "onConnectionTimeOut");
-	dojo.connect(this._transport, "onReadComplete", this, "onReadComplete");
+	dojo.connect(this._transport, "onSocketError", this, "onSocketError");
+//	dojo.connect(this._transport, "onConnectionError", this,"onConnectionError");
+//	dojo.connect(this._transport, "onConnectionTimeOut", this, "onConnectionTimeOut");
+//	dojo.connect(this._transport, "onReadComplete", this, "onReadComplete");
 	
 	this.registerPacketHandler({
 		name: "iq",
@@ -642,8 +642,8 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			////console.log("xmppSession::onTransportReady()");
 		},
 
-		onTransportTerminate: function(newState, oldState, message){
-			this.setState(dojox.xmpp.xmpp.TERMINATE, message);
+		onTransportTerminate: function(reason, isError){
+			this.setState(dojox.xmpp.xmpp.TERMINATE, {msg:reason, error:isError});
 		},
 
 		onConnected: function(){
@@ -651,7 +651,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 		},
 
 		onTerminate: function(newState, oldState, message){
-
+			
 		},
 
 		onActive: function(){
@@ -663,23 +663,10 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			////console.log("xmppSession::onRegisterChatInstance()");
 		},
 
-		onHostNotFound: function(){
-            // not calling setState since we do not want to trigger onTerminate
-            // TODO: setState should handle such cases
-            this.state = dojox.xmpp.xmpp.TERMINATE;
+		onSocketError: function(){
+			this.setState(dojox.xmpp.xmpp.TERMINATE, message);
 		},
 
-		onConnectionError: function(){
-
-		},
-		
-		onConnectionTimeOut:function(){
-			
-		},
-		
-		onReadComplete: function(){
-			
-		},
 		onRegisterMucInstance: function(mucInstance){},
 
 		onRosterAdded: function(ri){},
