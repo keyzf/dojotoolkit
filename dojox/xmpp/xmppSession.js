@@ -317,6 +317,11 @@ dojo.extend(dojox.xmpp.xmppSession, {
 	                if (node.getAttribute('xmlns') === dojox.xmpp.xmpp.XHTML_IM_NS){
 	                    message.xhtml = node.getElementsByTagName("body")[0];
 	                }
+				},
+				attention: function(node){
+					if(node.getAttribute('xmlns') || node.getAttribute('xmlns')===""){
+						message.buzz = true;
+					}
 				}
 			}
 			

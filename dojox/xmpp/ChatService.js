@@ -69,7 +69,42 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 		this.setState(dojox.xmpp.chat.CHAT_STATE_NS);
 	},
 
+	sendBuzz: function(msg){
+		if(!this.uid){
+			return;
+		}
+		
+		var req = {
+			xmlns: "jabber:client",
+			to: this.jid || this.uid,
+			from: this.session.jid + "/" + this.session.resource,
+			type: "chat"
+		}
+		
+		var message = new dojox.string.Builder(dojox.xmpp.util.createElement("message",req,false));
 
+		var html = dojox.xmpp.util.createElement("html", { "xmlns":dojox.xmpp.xmpp.XHTML_IM_NS},false);
+		var attention  = dojox.xmpp.util.createElement("attention",{"xmlns":"urn:xmpp:attention:0"},false);
+		var bodyTag = dojox.xmpp.util.createElement("body", {"xml:lang":this.session.lang, "xmlns":dojox.xmpp.xmpp.XHTML_BODY_NS}, false) + msg.body + "</body>";
+		var bodyPlainTag = dojox.xmpp.util.createElement("body", {}, false) + dojox.xmpp.util.stripHtml(msg.body) + "</body>";
+
+		if (message.subject && message.subject != "") {
+			message.append(dojox.xmpp.util.createElement("subject", {}, false), message.subject, "</subject>");
+		}
+		message.append(attention,"</attention>",bodyPlainTag, html, bodyTag, "</html>");
+
+		if(this.chatid){
+			message.append(dojox.xmpp.util.createElement("thread", {}, false), this.chatid, "</thread>");
+		}
+
+		if (this.useChatState){
+			message.append(dojox.xmpp.util.createElement("active",{xmlns: dojox.xmpp.chat.CHAT_STATE_NS},true));
+			this._currentState = dojox.xmpp.chat.ACTIVE_STATE;
+		}
+		message.append("</message>");
+		this.onMessageCreated(message.toString(),this.uid, this.session.jid);
+		this.session.dispatchPacket(message.toString());
+	},
 	sendMessage: function(msg){
 		if (!this.uid){
 			//console.log("ChatService::sendMessage() -  Contact Id is null, need to invite to chat");
@@ -87,7 +122,7 @@ dojo.declare("dojox.xmpp.ChatService", null, {
 		
 		var message = new dojox.string.Builder(dojox.xmpp.util.createElement("message",req,false));
 
-		var html = dojox.xmpp.util.createElement("html", { "xmlns":dojox.xmpp.xmpp.XHTML_IM_NS},false)
+		var html = dojox.xmpp.util.createElement("html", { "xmlns":dojox.xmpp.xmpp.XHTML_IM_NS},false);
 
 		var bodyTag = dojox.xmpp.util.createElement("body", {"xml:lang":this.session.lang, "xmlns":dojox.xmpp.xmpp.XHTML_BODY_NS}, false) + msg.body + "</body>";
 		var bodyPlainTag = dojox.xmpp.util.createElement("body", {}, false) + dojox.xmpp.util.stripHtml(msg.body) + "</body>";
