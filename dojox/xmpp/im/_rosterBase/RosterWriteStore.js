@@ -36,13 +36,12 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
 		});
 		
 		dojo.forEach(missingChildren, function(rosterItem) {
-			if(rosterItem.groups.length && dojo.indexOf(rosterItem.groups, item.name) !== -1) {
+			if(dojo.indexOf(rosterItem.groups, item.name) !== -1) {
 				rosterItem.groups.splice(rosterItem.groups.indexOf(item.name), 1);
 				
 				this._saveRosterItem(rosterItem, item.name);
 			}
 		}, this);
-		
 		
 		//Now, find if a item has been added
 		var newChildren = [];
@@ -56,7 +55,9 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
 		
 		dojo.forEach(newChildren, function(rosterItem) {
 			if(dojo.indexOf(rosterItem.groups, item.name) === -1 && item.name !== this.CONSTANTS.DEFAULT_GROUP_NAME) {
-				rosterItem.groups.push(item.name);
+				if(item.name !== this.CONSTANTS.DEFAULT_GROUP_NAME) {
+                    rosterItem.groups.push(item.name);
+				}
 				
 				this._saveRosterItem(rosterItem, item.name);
 			}
