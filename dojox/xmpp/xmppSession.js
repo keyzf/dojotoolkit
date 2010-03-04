@@ -4,6 +4,7 @@ dojo.provide("dojox.xmpp.xmppSession");
 dojo.require("dojox.xmpp.transportManager");
 dojo.require("dojox.xmpp.core.Auth");
 dojo.require("dojox.xmpp.im.RosterStore");
+dojo.require("dojox.xmpp.xep.Vcard_temp")
 
 dojo.require("dojox.xmpp.RosterService");
 dojo.require("dojox.xmpp.PresenceService");
@@ -598,7 +599,8 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			this.chatRegister=[];
 			this.mucRegister=[];
 			this.roster=[];
-			this.rosterStore = new dojox.xmpp.im.RosterStore(this);
+			this.vcard = new dojox.xmpp.xep.Vcard_temp(this);
+			this.rosterStore = new dojox.xmpp.im.RosterStore({session: this, vcard: this.vcard});
 			this.setState(dojox.xmpp.xmpp.ACTIVE); // For backwards compatibilty. To be removed in 2.0.
 		},
 
