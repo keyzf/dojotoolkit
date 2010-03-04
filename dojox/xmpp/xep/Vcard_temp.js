@@ -34,6 +34,7 @@ dojo.declare("dojox.xmpp.xep.Vcard_temp", null, {
         }
         if(this._processQueueTimeout){
             clearTimeout(this._processQueueTimeout);
+            this._processQueueTimeout = null;
         }
         if(this._queue.length){
             var item=this._queue.shift();
