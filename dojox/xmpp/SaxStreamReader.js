@@ -39,7 +39,7 @@ dojo.declare("dojox.xmpp.SaxStreamReader", null, {
 		if (this._saxDepth == 1) {
 			var serializedXml = this._saxBuffer.toString();
 			this._saxBuffer.clear();
-			console.info("RECD: ", serializedXml);
+			console.info("RECD: ", serializedXml.substring(0,100));
 			this.onStanza(dojox.xml.parser.parse(serializedXml).documentElement);
 		} else {
 			if (this._saxDepth == 0) {

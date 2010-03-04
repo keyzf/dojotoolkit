@@ -2,13 +2,49 @@ dojo.provide("dojox.xmpp.xep.Vcard_temp");
 
 dojo.declare("dojox.xmpp.xep.Vcard_temp", null, {
     _session: null,
+    _queue: null,
+    _rosterLoaded: false,
     constructor: function(session){
         this._session = session;
+        this._queue = [];
+    },
+    _initStore: function(){
+        if(this._rosterStore){
+            return;
+        }
+        this._rosterStore = this._session.rosterStore;
+        if(!this._rosterStore){
+            return;
+        }
+        dojo.connect(this._rosterStore, "onRosterLoaded", this, function(){
+            this._rosterLoaded = true;
+            this._processQueue();
+        });
     },
     fetchVcard: function(jid){
+        this._initStore();
+        var outdef = new dojo.Deferred();
+        this._queue.push({def: outdef, jid:jid});
+        this._processQueue();
+        return outdef;
+    },
+    _processQueue: function(){
+        if(!this._rosterLoaded){
+            return;
+        }
+        if(this._processQueueTimeout){
+            clearTimeout(this._processQueueTimeout);
+        }
+        if(this._queue.length){
+            var item=this._queue.shift();
+            this._fetchVcard(item.jid, item.def);
+            this._processQueueTimeout = setTimeout(dojo.hitch(this, "_processQueue"),60000);
+        }
+    },
+    _fetchVcard: function(jid, outdef){
         var props = {
             id: this._session.getNextIqId(),
-            type: "get",
+            type: "get"
         };
         if(jid){
             props.to = jid;
@@ -20,13 +56,11 @@ dojo.declare("dojox.xmpp.xep.Vcard_temp", null, {
             "</iq>"
         );
         var indef = this._session.dispatchPacket(req, "iq", props.id);
-        var outdef = new dojo.Deferred();
         indef.addCallback(dojo.hitch(this, function(msg){
-            this.onVcardFetched(jid, outdef, msg);
+            this._onVcardFetched(jid, outdef, msg);
         }));
-        return outdef;
     },
-    onVcardFetched: function(jid, def, msg) {
+    _onVcardFetched: function(jid, def, msg) {
         if (msg.getAttribute('type') == 'result') {
             // Iterate over roster items
             var session = this._session;
@@ -46,12 +80,13 @@ dojo.declare("dojox.xmpp.xep.Vcard_temp", null, {
                         FAMILY: FAMILY && FAMILY.textContent
                     },
                     NICKNAME: NICKNAME && NICKNAME.textContent
-                }
+                };
                 def.callback({jid:jid, vCardDetails:vCardDetails});
             }            
             def.errback(msg);
         } else if (msg.getAttribute('type') == "error") {
             def.errback(msg);
         }
+        setTimeout(dojo.hitch(this, "_processQueue"), 500);
     }
 });
