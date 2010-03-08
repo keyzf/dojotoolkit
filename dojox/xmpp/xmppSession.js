@@ -107,8 +107,10 @@ dojox.xmpp.xmppSession = function(props){
 		name: "MucPresence",
 		condition: "presence x[xmlns^='http://jabber.org/protocol/muc']",
 		handler: dojo.hitch(this, function(msg) {
-	        var mucInstance = this.getMucInstanceFromJid(msg.getAttribute("from"));
-	        mucInstance.handlePresence(msg);
+			var mucInstance = this.getMucInstanceFromJid(msg.getAttribute("from"));
+			if(mucInstance){
+				mucInstance.handlePresence(msg);
+			}
 		})
     });
     
@@ -122,7 +124,11 @@ dojox.xmpp.xmppSession = function(props){
 		name: "MucMessage",
 		condition: "message[type='groupchat'], message x[xmlns^='http://jabber.org/protocol/muc']",
 		handler: dojo.hitch(this, function(msg){
-			this.getMucInstanceFromJid(msg.getAttribute("from")).handleMessage(msg);
+			var mucInstance = this.getMucInstanceFromJid(msg.getAttribute("from"));
+			// TODO: handle invites
+			if(mucInstance){
+				mucInstance.handleMessage(msg);
+			}
 		})
 	});
     
