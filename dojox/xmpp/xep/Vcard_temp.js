@@ -59,6 +59,7 @@ dojo.declare("dojox.xmpp.xep.Vcard_temp", null, {
         var indef = this._session.dispatchPacket(req, "iq", props.id);
         indef.addCallback(dojo.hitch(this, function(msg){
             this._onVcardFetched(jid, outdef, msg);
+            setTimeout(dojo.hitch(this, "_processQueue"), 500);
         }));
     },
     _onVcardFetched: function(jid, def, msg) {
@@ -84,10 +85,11 @@ dojo.declare("dojox.xmpp.xep.Vcard_temp", null, {
                 };
                 def.callback({jid:jid, vCardDetails:vCardDetails});
             }            
-            def.errback(msg);
+            else {
+                def.errback(msg);
+            }
         } else if (msg.getAttribute('type') == "error") {
             def.errback(msg);
         }
-        setTimeout(dojo.hitch(this, "_processQueue"), 500);
     }
 });
