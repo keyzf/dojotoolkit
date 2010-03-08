@@ -35,14 +35,14 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 		
 		this.socket.onReadComplete(dojo.hitch(this, function(e){
 			if (this._socketState === this.CONSTANTS.OPEN) {
-				console.error('Titanium: onReadComplete');
+				console.info('Titanium: onReadComplete');
 				this.close(e, 'onReadComplete', true); // need to see if onReadComplete callback expects a param
 			}
 		}));
 		
 		if (this.socket.onTimeout) {
 			this.socket.onTimeout(dojo.hitch(this, function(e){
-				console.error("dojox.xmpp.transportProviders.Titanium: Connection Timed Out");
+				console.info("dojox.xmpp.transportProviders.Titanium: Connection Timed Out");
 				this.close(e,'onConnectionTimeOut',true); // need to see if onTimeout callback expects a param
 			}));
 		}
