@@ -58,7 +58,12 @@ dojo.declare("dojox.xmpp.xep.Vcard_temp", null, {
         );
         var indef = this._session.dispatchPacket(req, "iq", props.id);
         indef.addCallback(dojo.hitch(this, function(msg){
-            this._onVcardFetched(jid, outdef, msg);
+            try{
+                this._onVcardFetched(jid, outdef, msg);
+            }
+            catch(e){
+                console.error("Vcard_temp._onVcardFetched", e);
+            }
             setTimeout(dojo.hitch(this, "_processQueue"), 500);
         }));
     },
