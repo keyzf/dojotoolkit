@@ -575,8 +575,9 @@ dojo.require("dojo._base.connect");
 						// These are Windows Virtual Key Codes
 						// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/WinUI/WindowsUserInterface/UserInput/VirtualKeyCodes.asp
 						var unprintable = k!=13 && k!=32 && k!=27 && (k<48 || k>90) && (k<96 || k>111) && (k<186 || k>192) && (k<219 || k>222);
+						
 						// synthesize keypress for most unprintables and CTRL-keys
-						var faux;
+						var eventProps;
 						if(unprintable || evt.ctrlKey){
 							var c = unprintable ? 0 : k;
 							if(evt.ctrlKey){
@@ -591,11 +592,17 @@ dojo.require("dojo._base.connect");
 								}
 							}
 							// simulate a keypress event
-							faux = del._synthesizeEvent(evt, {type: 'keypress', faux: true, charCode: c});
+							eventProps = del._synthesizeEvent(evt, {type: 'keypress', faux: true, charCode: c});
 						} else {
-							faux = del._synthesizeEvent(evt, {type: "keypress"});
+							eventProps = del._synthesizeEvent(evt, {type: "keypress"});
 						}
-                        fp.call(evt.currentTarget, faux);
+						
+						if(k===13) {
+							eventProps.keyChar = "";
+							eventProps.charOrCode = 13;
+						}
+						
+						fp.call(evt.currentTarget, eventProps);
 					});
 				} else {
 					handle = del._add(node, event, fp);
