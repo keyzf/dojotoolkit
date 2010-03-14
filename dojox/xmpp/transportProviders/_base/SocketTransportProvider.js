@@ -35,7 +35,7 @@ dojo.declare("dojox.xmpp.transportProviders._base.SocketTransportProvider", [doj
         }
     },
     
-    close: function(reason, /*String*/callback, /*Boolean*/isError) {
+    close: function(/*String*/reason, /*Boolean*/isError) {
 		this.inherited(arguments);
 		console.debug("Closing Titanium transport socket.");
     },

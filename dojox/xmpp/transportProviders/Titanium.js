@@ -35,24 +35,22 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 		
 		this.socket.onReadComplete(dojo.hitch(this, function(){
 			if (this._socketState === this.CONSTANTS.OPEN) {
-				console.error('Titanium: onReadComplete');
-				this.close('onReadComplete','onSocketError', true); // need to see if onReadComplete callback expects a param
+				this.close('onReadComplete', true); // need to see if onReadComplete callback expects a param
 			}
 		}));
 		
 		if (this.socket.onTimeout) {
 			this.socket.onTimeout(dojo.hitch(this, function(e){
-				console.error("dojox.xmpp.transportProviders.Titanium: Connection Timed Out");
-				this.close(e,'onSocketError',true); // need to see if onTimeout callback expects a param
+				this.close(e,true); // need to see if onTimeout callback expects a param
 			}));
 		}
         
         if (this.socket.onError) {
 			this.socket.onError(dojo.hitch(this, function(e){
 				if (this._socketState === this.CONSTANTS.OPEN) {
-					this.close(e,'onSocketError', true);
+					this.close(e, true);
 				}else{
-					this.close(e,'onSocketError', true);
+					this.close(e, true);
 				}
 			}));
 		}
@@ -69,16 +67,15 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 			if (this.socket.connectNB()) {
 				console.debug('Attempting to connect');
 			}else {
-				console.error("dojox.xmpp.transportProviders.Titanium: Socket failed to connect");
-				this.close("socket failed to connect",'onSocketError', true);
+				this.close("socket failed to connect", true);
 			}
 		}catch(e){
-			this.close(e,'onSocketError',true);
+			this.close(e,true);
 		}
 	},
 
 	
-	close: function(reason, /*String*/callback, /*Boolean*/isError) {
+	close: function(/*String*/reason, /*Boolean*/isError) {
 		if(isError===true){
 			this._socketState = this.CONSTANTS.ERROR;
 		}
@@ -102,7 +99,7 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 			this.inherited(arguments);
 			this.socket.write(data);
 		}catch(e){
-			this.close("onConnectionReset",'onSocketError', true)
+			this.close("onConnectionReset", true)
 			console.error('Titanium:_writeToSocket: ', e);
 		}
 	}
