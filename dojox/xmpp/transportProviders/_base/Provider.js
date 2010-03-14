@@ -44,19 +44,18 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 		console.warn("dojox.xmpp.transportProviders.<selected transport provider>.open not implemented.");
 	},
 	
-	close: function(reason, /*String*/callback, /*Boolean*/isError) {
+	close: function(/*String*/ reason, /*Boolean*/isError) {
         clearTimeout(this._keepalive);
         this._keepalive = null;
         this._deferredRequests = {};
         this._matchTypeIdAttribute = {};
-		this.onTerminate(reason, isError);
-//        if(typeof this[callback] == "function"){
-//           this[callback](reason);
-//      }else{
-//         this.onTerminate();
-//    }
+		if (isError) {
+			this.onTerminate(reason, isError);
+		}
 	},
-	
+	onTerminate: function(reason, isError){
+		
+	},
 	setState: function(state, message) {
         if (this.state != state) {
             if (this["on"+state]){
@@ -92,6 +91,7 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 	onStreamReady: function() {
 		// Event signalling that the stream is ready to interact with
 	},
+
 
 	stanzaHandler: function(msg) {
 		this._resetKeepalive();

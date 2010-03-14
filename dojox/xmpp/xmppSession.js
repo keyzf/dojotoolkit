@@ -74,10 +74,29 @@ dojox.xmpp.xmppSession = function(props){
 	dojo.connect(this._transport, "onStreamReady", this, "onTransportReady");
 	dojo.connect(this._transport, "onTerminate", this, "onTransportTerminate");
 	dojo.connect(this._transport, "onXmppStanza", this, "handlePacket");
+
 	dojo.connect(this._transport, "onSocketError", this, "onSocketError");
 //	dojo.connect(this._transport, "onConnectionError", this,"onConnectionError");
 //	dojo.connect(this._transport, "onConnectionTimeOut", this, "onConnectionTimeOut");
 //	dojo.connect(this._transport, "onReadComplete", this, "onReadComplete");
+
+	
+	// Register the packet handlers:
+	
+    this.registerPacketHandler({
+		name: "iqSetForRoster",
+		//condition: "iq[type='set'] query[xmlns='jabber:iq:roster']",
+		condition: function(msg) {
+			if(msg.nodeName === "iq" && msg.getAttribute("type") === "set" && msg.getElementsByTagName("query").length && msg.getElementsByTagName("query")[0].getAttribute("xmlns") === "jabber:iq:roster") {
+				return true;
+			}
+			return false;
+		},
+		handler: dojo.hitch(this, function(msg) {
+	        this.rosterSetHandler(msg.getElementsByTagName("query")[0]);
+	        this.sendIqResult(msg.getAttribute("id"), msg.getAttribute("from"));
+		})
+    });
 	
 	this.registerPacketHandler({
 		name: "iq",
@@ -180,8 +199,11 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		close: function(){
 			this.dispatchPacket(dojox.xmpp.util.createElement("presence",{type:"unavailable",xmlns:dojox.xmpp.xmpp.CLIENT_NS},true));
-			this.setState(dojox.xmpp.xmpp.TERMINATE);
-			this._transport.close("unavailable");	
+			this.setState(dojox.xmpp.xmpp.TERMINATE,{
+				msg: 'logout',
+				error: false
+			}); // will fire the onTerminate event
+			this._transport.close("logout",false);	
 		},
 
         registerPacketHandler: function(handlerInformation) {
@@ -564,7 +586,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 				var oldState = this.state;
 				this.state=state;
 				if (this["on"+state]){
-					this["on"+state](state, oldState, message);
+					this["on"+state](message);
 				}	
 			}
 		},
@@ -650,7 +672,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			////console.log("xmppSession::onConnected()");
 		},
 
-		onTerminate: function(newState, oldState, message){
+		onTerminate: function(message){
 			
 		},
 
