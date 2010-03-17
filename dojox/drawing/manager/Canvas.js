@@ -19,10 +19,10 @@ dojo.provide("dojox.drawing.manager.Canvas");
 			var dim = dojo.contentBox(this.srcRefNode);
 			this.height = this.parentHeight = dim.h;
 			this.width = this.parentWidth = dim.w;
-			this.domNode = dojo.create("div", {id:"canvasNode"}, this.srcRefNode);
+			this.domNode = dojo.create("div", {/*id:"canvasNode"*/}, this.srcRefNode);
 			dojo.style(this.domNode, {
-				width:this.width,
-				height:"auto"
+				width:"370px",//this.width,
+				height:"420px"//"auto"
 			});
 			
 			dojo.setSelectable(this.domNode, false);
