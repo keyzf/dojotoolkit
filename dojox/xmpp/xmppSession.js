@@ -4,6 +4,7 @@ dojo.provide("dojox.xmpp.xmppSession");
 dojo.require("dojox.xmpp.transportManager");
 dojo.require("dojox.xmpp.core.Auth");
 dojo.require("dojox.xmpp.im.RosterStore");
+dojo.require("dojox.xmpp.xep.Vcard_temp")
 
 dojo.require("dojox.xmpp.RosterService");
 dojo.require("dojox.xmpp.PresenceService");
@@ -125,8 +126,10 @@ dojox.xmpp.xmppSession = function(props){
 		name: "MucPresence",
 		condition: "presence x[xmlns^='http://jabber.org/protocol/muc']",
 		handler: dojo.hitch(this, function(msg) {
-	        var mucInstance = this.getMucInstanceFromJid(msg.getAttribute("from"));
-	        mucInstance.handlePresence(msg);
+			var mucInstance = this.getMucInstanceFromJid(msg.getAttribute("from"));
+			if(mucInstance){
+				mucInstance.handlePresence(msg);
+			}
 		})
     });
     
@@ -140,7 +143,11 @@ dojox.xmpp.xmppSession = function(props){
 		name: "MucMessage",
 		condition: "message[type='groupchat'], message x[xmlns^='http://jabber.org/protocol/muc']",
 		handler: dojo.hitch(this, function(msg){
-			this.getMucInstanceFromJid(msg.getAttribute("from")).handleMessage(msg);
+			var mucInstance = this.getMucInstanceFromJid(msg.getAttribute("from"));
+			// TODO: handle invites
+			if(mucInstance){
+				mucInstance.handleMessage(msg);
+			}
 		})
 	});
     
@@ -620,7 +627,8 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			this.chatRegister=[];
 			this.mucRegister=[];
 			this.roster=[];
-			this.rosterStore = new dojox.xmpp.im.RosterStore(this);
+			this.vcard = new dojox.xmpp.xep.Vcard_temp(this);
+			this.rosterStore = new dojox.xmpp.im.RosterStore({session: this, vcard: this.vcard});
 			this.setState(dojox.xmpp.xmpp.ACTIVE); // For backwards compatibilty. To be removed in 2.0.
 		},
 

@@ -222,7 +222,7 @@ dojo.require("dojo._base.connect");
 		NUM_LOCK: 144,
 		SCROLL_LOCK: 145,
 		// virtual key mapping
-		copyKey: dojo.isMac ? (dojo.isSafari ? 91 : 224 ) : 17
+		copyKey: dojo.isMac && !dojo.isAIR ? (dojo.isSafari ? 91 : 224 ) : 17
 	};
 	
 	var evtCopyKey = dojo.isMac ? "metaKey" : "ctrlKey";
@@ -467,7 +467,7 @@ dojo.require("dojo._base.connect");
 				var k=evt.keyCode;
 				// These are Windows Virtual Key Codes
 				// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/WinUI/WindowsUserInterface/UserInput/VirtualKeyCodes.asp
-				var unprintable = k!=13 && k!=32 && k!=27 && (k<48||k>90) && (k<96||k>111) && (k<186||k>192) && (k<219||k>222);
+				var unprintable = k!=13 && k!=32 && (k<48 || k>90) && (k<96 || k>111) && (k<186 || k>192) && (k<219 || k>222);
 				// synthesize keypress for most unprintables and CTRL-keys
 				if(unprintable||evt.ctrlKey){
 					var c = unprintable ? 0 : k;
@@ -563,19 +563,21 @@ dojo.require("dojo._base.connect");
 		dojo.mixin(del, {
 			add: function(/*DOMNode*/ node, /*String*/ event, /*Function*/ fp){
 				if(!node){return;} // undefined
-				var handle = del._add(node, event, fp);
+				var handle = {};// = del._add(node, event, fp);
 				if(del._normalizeEventName(event) == "keypress"){
 					// we need to listen to onkeydown to synthesize
 					// keypress events that otherwise won't fire
 					// in Safari 3.1+: https://lists.webkit.org/pipermail/webkit-dev/2007-December/002992.html
-					handle._stealthKeyDownHandle = del._add(node, "keyup", function(evt){
+					handle._stealthKeyDownHandle = del._add(node, "keydown", function(evt){
 						//A variation on the IE _stealthKeydown function
 						//Synthesize an onkeypress event, but only for unprintable characters.
 						var k=evt.keyCode;
 						// These are Windows Virtual Key Codes
 						// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/WinUI/WindowsUserInterface/UserInput/VirtualKeyCodes.asp
 						var unprintable = k!=13 && k!=32 && k!=27 && (k<48 || k>90) && (k<96 || k>111) && (k<186 || k>192) && (k<219 || k>222);
+						
 						// synthesize keypress for most unprintables and CTRL-keys
+						var eventProps;
 						if(unprintable || evt.ctrlKey){
 							var c = unprintable ? 0 : k;
 							if(evt.ctrlKey){
@@ -590,10 +592,20 @@ dojo.require("dojo._base.connect");
 								}
 							}
 							// simulate a keypress event
-							var faux = del._synthesizeEvent(evt, {type: 'keypress', faux: true, charCode: c});
-							fp.call(evt.currentTarget, faux);
+							eventProps = del._synthesizeEvent(evt, {type: 'keypress', faux: true, charCode: c});
+						} else {
+							eventProps = del._synthesizeEvent(evt, {type: "keypress"});
 						}
+						
+						if(k===13) {
+							eventProps.keyChar = "";
+							eventProps.charOrCode = 13;
+						}
+						
+						fp.call(evt.currentTarget, eventProps);
 					});
+				} else {
+					handle = del._add(node, event, fp);
 				}
 				return handle; /*Handle*/
 			},

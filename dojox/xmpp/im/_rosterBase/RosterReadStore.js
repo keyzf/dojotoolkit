@@ -39,18 +39,19 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
             STATUS_INVISIBLE: 'invisible'
         }
     },
-    constructor: function(session){
+    constructor: function(params){
         // summary: constructor
         this._roster = {};
         this._groups = {};
         this._tempPresence = {};  // For temporarily storing presence information, incase the roster isn't available yet.
+        var session = params.session;
         this._session = session;
         this._features = {
             'dojo.data.api.Read': true,
             'dojo.data.api.Notification': true,
             'dojo.data.api.Identity': true
         };
-        
+        this._vcard = params.vcard;
         session.registerPacketHandler({
             name: "ChatPresenceUpdate",
             //condition: "presence:not([type]):not(x[xmlns^='http://jabber.org/protocol/muc']), presence[type='unavailable']:not(x[xmlns^='http://jabber.org/protocol/muc'])",
@@ -247,7 +248,21 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
     getLabel: function(/* item */item){
         // summary:
         //     See dojo.data.api.Read.getLabel()
-        if (item.rosterNodeType == "contact" && typeof item.name == "undefined") {
+        if (item.rosterNodeType == "contact"){
+            if(item.vcard){
+                if(item.vcard.N && item.vcard.N.GIVEN) {
+                    var label = item.vcard.N.GIVEN
+                    if(item.vcard.N.FAMILY){
+                        label += " " + item.vcard.N.FAMILY;
+                    }
+                    else if(item.vcard.N.MIDDLE){
+                        label += " " + item.vcard.N.MIDDLE;
+                    }
+                    return label;
+                } else if(item.vcard.NICKNAME){
+                    return item.vcard.NICKNAME
+                }
+            }
             return item.jid.split("@")[0]; //String
         }
         else {
@@ -593,9 +608,22 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
 
         this._session.roster.push(re);   // For backwards compatibility. To be removed in 2.0.
         this._roster[re.jid] = re;
+        if(this._vcard){
+            setTimeout(dojo.hitch(this, function(){
+                def = this._vcard.fetchVcard(re.jid);
+                def.addCallback(dojo.hitch(this, "_updateVCard"));
+            }), 10000);
+        }
         return re;
     },
-    
+
+    _updateVCard: function(result){
+        //console.debug(result.jid, result.vCardDetails);
+        var buddyItem = this._roster[result.jid];
+        buddyItem.vcard = result.vCardDetails;
+        this.onSet(buddyItem, "vcard");
+    },
+
     getStoreRepresentation: function() {
         var treeContents, groupNamesList = [];
         
@@ -793,34 +821,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
         // summary:
         //     See dojo.data.api.Notification.onDelete()
     },
-    
-    newItem: function(kwArgs, parent) {
-        console.log("newItem ", kwArgs, parent);
-    },
-    
-    save: function(kwArgs) {
-        console.log("save ", kwArgs);
-    },
-    
-    setValue: function(item, attribute, value) {
-        console.log("setValue ", item, attribute, value);
-    },
-    
-    setValues: function(item, attribute, values) {
-        this._assertIsItem(item);
-        this._assertIsAttribute(attribute);
-        
-        console.log("setValues ", item, attribute, values);
-    },
-    
-    revert: function() {
-        console.log("revert");
-    },
-    
-    deleteItem: function(item) {
-        console.log("deleteItem ", item);
-    },
-    
+	
     isDirty: function(item) {
         console.log("isDirty ", item);
     }
