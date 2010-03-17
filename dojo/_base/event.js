@@ -602,6 +602,10 @@ dojo.require("dojo._base.connect");
 							eventProps.charOrCode = 13;
 						}
 						
+						if(!unprintable && typeof eventProps.charOrCode === "number" && eventProps.charOrCode >= 32) {
+							eventProps.charOrCode = String.fromCharCode(eventProps.charOrCode);
+						}
+						
 						fp.call(evt.currentTarget, eventProps);
 					});
 				} else {
