@@ -429,14 +429,7 @@ dojo.declare("dijit._editor.RichText", dijit._Widget, {
 			var s = 'javascript:parent.dijit.byId("'+this.id+'")._iframeSrc';
 			ifr.setAttribute('src', s);
 			this.editingArea.appendChild(ifr);
-			
-			// Set the iframe src to editor.html only in Windows
-			// Hack to prevent Linux crash
-			var isLinux = window.navigator.userAgent.indexOf("Linux") != -1;
 			if(dojo.isWebKit){ // Safari seems to always append iframe with src=about:blank
-                if(window.Titanium && !isLinux){
-                    s = "editor.html";
-                }
 				setTimeout(function(){ifr.setAttribute('src', s)},0);
 			}
 		}else{
