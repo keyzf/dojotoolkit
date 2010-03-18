@@ -498,20 +498,22 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
         }
         
         if(this._isRosterFetched) {
-            var oldPresence = this._roster[bareJid].presence, resources = this._roster[bareJid].resources;
-            
-            if(resources[p.resource.toString()] && (p.show === this.CONSTANTS.presence.STATUS_OFFLINE)) {
-                delete resources[p.resource];
-            } else if (p.show !== this.CONSTANTS.presence.STATUS_OFFLINE) {
-                resources[p.resource] = p;
-            }
-            this._chooseBestPresence(this._roster[bareJid]);
-            if(this._roster[bareJid].groups.length) {
-                dojo.forEach(this._roster[bareJid].groups, this._setGroupCounts, this);
-            } else {
-                this._setGroupCounts(this.CONSTANTS.DEFAULT_GROUP_NAME);
-            }
-            this.onSet(this._roster[bareJid], "presence", oldPresence, this._roster[bareJid].presence);
+			if(this._roster[bareJid]) {
+                var oldPresence = this._roster[bareJid].presence, resources = this._roster[bareJid].resources;
+                
+                if(resources[p.resource.toString()] && (p.show === this.CONSTANTS.presence.STATUS_OFFLINE)) {
+                    delete resources[p.resource];
+                } else if (p.show !== this.CONSTANTS.presence.STATUS_OFFLINE) {
+                    resources[p.resource] = p;
+                }
+                this._chooseBestPresence(this._roster[bareJid]);
+                if(this._roster[bareJid].groups.length) {
+                    dojo.forEach(this._roster[bareJid].groups, this._setGroupCounts, this);
+                } else {
+                    this._setGroupCounts(this.CONSTANTS.DEFAULT_GROUP_NAME);
+                }
+                this.onSet(this._roster[bareJid], "presence", oldPresence, this._roster[bareJid].presence);
+			}
         } else {
             if(!this._tempPresence[bareJid]) {
                 this._tempPresence[bareJid] = {};
