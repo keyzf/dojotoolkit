@@ -4,7 +4,7 @@ dojo.provide("dojox.xmpp.xmppSession");
 dojo.require("dojox.xmpp.transportManager");
 dojo.require("dojox.xmpp.core.Auth");
 dojo.require("dojox.xmpp.im.RosterStore");
-dojo.require("dojox.xmpp.xep.Vcard_temp")
+dojo.require("dojox.xmpp.xep.Vcard_temp");
 
 dojo.require("dojox.xmpp.RosterService");
 dojo.require("dojox.xmpp.PresenceService");
@@ -234,7 +234,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			//console.log("xmppSession::processProtocolResponse() ", msg, msg.nodeName);
 			var matchCount = 0, envelope = dojox.xml.parser.parse("<tmpenvelope />").documentElement;
 			envelope.appendChild(msg.cloneNode(true));
-			
 			dojo.forEach(this._registeredPacketHandlers, function(handlerInformation){
                 if(!handlerInformation) {
 					return;
@@ -705,6 +704,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			}
 	
 			for (var i=0; i<msg.childNodes.length; i++){
+				alert(msg.childNodes.length);
 				var n = msg.childNodes[i];
 				switch(n.nodeName){
 					case 'error':

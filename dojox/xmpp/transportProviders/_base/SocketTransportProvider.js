@@ -9,7 +9,7 @@ dojo.declare("dojox.xmpp.transportProviders._base.SocketTransportProvider", [doj
     constructor: function(config) {
 		this._streamReader = new dojox.xmpp.SaxStreamReader();
         dojo.connect(this._streamReader, "onSessionStart", this, "onStreamReady");
-        dojo.connect(this._streamReader, "onSessionEnd", this, "close");
+        dojo.connect(this._streamReader, "onSessionEnd", this, "endSession");
         dojo.connect(this._streamReader, "onStanza", this, "stanzaHandler");
     },
     
@@ -17,7 +17,9 @@ dojo.declare("dojox.xmpp.transportProviders._base.SocketTransportProvider", [doj
         console.log("Connecting to: domain =" + this.domain + ", server =" + this.server + ", port =" + this.port);
         // To be overridden with code that opens the connection using socket APIs
     },
-    
+    endSession: function(){
+		this.close('Session terminated by server', true);
+	},
     restartStream: function() {
 		this.inherited(arguments);
         try {
