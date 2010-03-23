@@ -589,7 +589,6 @@ dojo.require("dojo._base.connect");
 							eventProps = del._synthesizeEvent(evt, {type: "keypress"});
 						}
 						
-						console.log(eventProps);
 						if(k === 13) {
 							eventProps.keyChar = "";
 							eventProps.charOrCode = 13;
