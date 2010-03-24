@@ -71,14 +71,14 @@ dojo.declare("dojox.xmpp.xep.Vcard_temp", null, {
         if (msg.getAttribute('type') == 'result') {
             // Iterate over roster items
             var session = this._session;
-            var vCard = dojo.query("iq>vCard", msg)[0];
+            var vCard = dojo.query(">vCard", msg)[0];
             if(vCard){
-                var FN = dojo.query("vCard>FN", vCard)[0];
-                var N = dojo.query("vCard>N", vCard)[0];
-                var GIVEN = dojo.query("N>GIVEN", N)[0];
-                var MIDDLE = dojo.query("N>MIDDLE", N)[0];
-                var FAMILY = dojo.query("N>FAMILY", N)[0];
-                var NICKNAME = dojo.query("vCard>NICKNAME", vCard)[0];
+                var FN = dojo.query(">FN", vCard)[0];
+                var N = dojo.query(">N", vCard)[0];
+                var GIVEN = dojo.query(">GIVEN", N)[0];
+                var MIDDLE = dojo.query(">MIDDLE", N)[0];
+                var FAMILY = dojo.query(">FAMILY", N)[0];
+                var NICKNAME = dojo.query(">NICKNAME", vCard)[0];
                 var vCardDetails = {
                     FN: FN && FN.textContent,
                     N: {
