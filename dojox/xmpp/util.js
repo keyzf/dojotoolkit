@@ -210,3 +210,73 @@ dojox.xmpp.util.isErrorNode = function(msg) {
         this.onLogin();
     }
 }
+
+dojox.xmpp.util.json2xml = function(o){
+    // summary:
+    //        Json to XML converter, inspired by
+    //        http://www.xml.com/pub/a/2006/05/31/converting-between-xml-and-json.html
+    var buffer = new dojox.string.Builder();
+
+    function writeObject(o){
+        console.log("writeObject called");
+        console.info(o);
+        var tagname, content;
+        for(tagname in o){
+            content = o[tagname];
+            break;
+        }
+        if(content instanceof Array){
+            // multiple elements of the same name
+            dojo.forEach(content, function(item){
+                var obj = {};
+                obj[tagname] = item;
+                writeObject(obj);
+            });
+        }else if(content === null){
+            // empty element
+            buffer.append("<" + tagname + "/>");
+        }else if(typeof content === "string"){
+            // element with nothing but text content
+            buffer.append("<" + tagname + ">" + dojox.xmpp.util.xmlEncode(content) + "</" + tagname + ">");
+        }else if(typeof content === "object"){
+            // complex element, with attributes and child nodes
+            var hasNonAttrs = false;
+            buffer.append("<" + tagname);
+            // attribute nodes
+            for(var key in content){
+                var value = content[key];
+                if(key[0] === "@"){
+                    if(value !== null){
+                        buffer.append(' ' + key.slice(1) + '="' + dojox.xmpp.util.xmlEncode(value) + '"');
+                    }
+                }else{
+                    hasNonAttrs = true;
+                }
+            }
+            if(!hasNonAttrs){
+                // no child nodes, close the element
+                buffer.append("/>");
+            }else{
+                // handle child nodes
+                buffer.append(">");
+                for(key in content){
+                    value = content[key];
+                    if(key === "#text"){
+                        // text node
+                        buffer.append(dojox.xmpp.util.xmlEncode(value));
+                    }else if(key[0] !== "@"){
+                        // element node
+                        var obj = {};
+                        obj[key] = value;
+                        writeObject(obj);
+                    }
+                }
+                // closing tag
+                buffer.append("</" + tagname + ">");
+            }
+        }
+    }
+
+    writeObject(o);
+    return buffer.toString();
+}
