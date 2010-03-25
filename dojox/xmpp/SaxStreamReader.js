@@ -39,7 +39,11 @@ dojo.declare("dojox.xmpp.SaxStreamReader", null, {
 		if (this._saxDepth == 1) {
 			var serializedXml = this._saxBuffer.toString();
 			this._saxBuffer.clear();
-			console.info("RECD: ", serializedXml.substring(0,100));
+			if(serializedXml.match(/^<iq .*><vCard .*/)){
+				console.info("RECD: ", serializedXml.substring(0, 150));
+			}else{
+				console.info("RECD: ", serializedXml);
+			}
 			this.onStanza(dojox.xml.parser.parse(serializedXml).documentElement);
 		} else {
 			if (this._saxDepth == 0) {
