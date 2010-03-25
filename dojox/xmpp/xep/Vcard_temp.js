@@ -79,6 +79,7 @@ dojo.declare("dojox.xmpp.xep.Vcard_temp", null, {
                 var MIDDLE = dojo.query(">MIDDLE", N)[0];
                 var FAMILY = dojo.query(">FAMILY", N)[0];
                 var NICKNAME = dojo.query(">NICKNAME", vCard)[0];
+                var PHOTO_EXTVAL = dojo.query(">PHOTO>EXTVAL", vCard)[0];
                 var vCardDetails = {
                     FN: FN && FN.textContent,
                     N: {
@@ -86,7 +87,8 @@ dojo.declare("dojox.xmpp.xep.Vcard_temp", null, {
                         MIDDLE: MIDDLE && MIDDLE.textContent,
                         FAMILY: FAMILY && FAMILY.textContent
                     },
-                    NICKNAME: NICKNAME && NICKNAME.textContent
+                    NICKNAME: NICKNAME && NICKNAME.textContent,
+                    PHOTO: PHOTO_EXTVAL && PHOTO_EXTVAL.textContent
                 };
                 def.callback({jid:jid, vCardDetails:vCardDetails});
             }            
