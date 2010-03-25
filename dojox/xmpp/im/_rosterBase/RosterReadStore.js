@@ -611,10 +611,8 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
         this._session.roster.push(re);   // For backwards compatibility. To be removed in 2.0.
         this._roster[re.jid] = re;
         if(this._vcard){
-            setTimeout(dojo.hitch(this, function(){
-                def = this._vcard.fetchVcard(re.jid);
-                def.addCallback(dojo.hitch(this, "_updateVCard"));
-            }), 10000);
+            def = this._vcard.fetchVcard(re.jid);
+            def.addCallback(dojo.hitch(this, "_updateVCard"));
         }
         return re;
     },
