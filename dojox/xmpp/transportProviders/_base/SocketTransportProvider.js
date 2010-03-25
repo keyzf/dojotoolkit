@@ -12,17 +12,25 @@ dojo.declare("dojox.xmpp.transportProviders._base.SocketTransportProvider", [doj
         dojo.connect(this._streamReader, "onSessionEnd", this, "endSession");
         dojo.connect(this._streamReader, "onStanza", this, "stanzaHandler");
     },
-    
+	stanzaHandler: function(stanza){
+		this.inherited(arguments);
+		var hosterror = stanza.getElementsByTagName('host-unknown');
+		if(hosterror.length>0){
+			this.errorState = dojox.xmpp.consts.HOST_NOT_FOUND;
+		}
+	},
     open: function() {
         console.log("Connecting to: domain =" + this.domain + ", server =" + this.server + ", port =" + this.port);
         // To be overridden with code that opens the connection using socket APIs
     },
     endSession: function(){
-		this.close('Session terminated by server', true);
+		var error = this.errorState || "";
+		this.close('Session terminated by server', {isError: true, args: error});
 	},
     restartStream: function() {
 		this.inherited(arguments);
         try {
+			this.errorState = null;
             this._streamReader.reset();
             this._writeToSocket("<?xml version=\"1.0\"?>");
             this._writeToSocket(dojox.xmpp.util.createElement("stream:stream", {
@@ -37,9 +45,9 @@ dojo.declare("dojox.xmpp.transportProviders._base.SocketTransportProvider", [doj
         }
     },
     
-    close: function(/*String*/reason, /*Boolean*/isError) {
-		this.inherited(arguments);
+    close: function(/*String*/reason, errorParams) {
 		console.debug("Closing Titanium transport socket.");
+		this.inherited(arguments);
     },
     
     _writeToSocket: function(data) {

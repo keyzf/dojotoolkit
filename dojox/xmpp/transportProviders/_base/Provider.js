@@ -15,6 +15,11 @@ dojox.xmpp.ns = {
 	XHTML_IM_NS: "http://jabber.org/protocol/xhtml-im"
 };
 
+dojox.xmpp.consts = {
+	HOST_NOT_FOUND: 1,
+	TRANSPORT_ERROR: 2
+};
+
 dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 	_keepalive: null,
     _deferredRequests: {},
@@ -44,16 +49,14 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 		console.warn("dojox.xmpp.transportProviders.<selected transport provider>.open not implemented.");
 	},
 	
-	close: function(/*String*/ reason, /*Boolean*/isError) {
+	close: function(/*String*/ reason, errorParams) {
         clearTimeout(this._keepalive);
         this._keepalive = null;
         this._deferredRequests = {};
         this._matchTypeIdAttribute = {};
-		if (isError) {
-			this.onTerminate(reason, isError);
-		}
+		this.onTerminate(reason, errorParams);
 	},
-	onTerminate: function(reason, isError){
+	onTerminate: function(reason, errorParams){
 		
 	},
 	setState: function(state, message) {
@@ -95,7 +98,6 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 
 	stanzaHandler: function(msg) {
 		this._resetKeepalive();
-		
 		this.onXmppStanza(msg);
 		var key = msg.nodeName + "-" + msg.getAttribute("id");
 		var def = this._deferredRequests[key];

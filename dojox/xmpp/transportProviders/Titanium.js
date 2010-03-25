@@ -35,22 +35,22 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 		
 		this.socket.onReadComplete(dojo.hitch(this, function(){
 			if (this._socketState === this.CONSTANTS.OPEN) {
-				this.close('onReadComplete', true); // need to see if onReadComplete callback expects a param
+				this.close('onReadComplete', {isError: true, args: dojox.xmpp.consts.TRANSPORT_ERROR}); // need to see if onReadComplete callback expects a param
 			}
 		}));
 		
 		if (this.socket.onTimeout) {
 			this.socket.onTimeout(dojo.hitch(this, function(e){
-				this.close(e,true); // need to see if onTimeout callback expects a param
+				this.close(e,{isError: true, args: dojox.xmpp.consts.TRANSPORT_ERROR}); // need to see if onTimeout callback expects a param
 			}));
 		}
         
         if (this.socket.onError) {
 			this.socket.onError(dojo.hitch(this, function(e){
 				if (this._socketState === this.CONSTANTS.OPEN) {
-					this.close(e, true);
+					this.close(e, {isError: true, args: dojox.xmpp.consts.TRANSPORT_ERROR});
 				}else{
-					this.close(e, true);
+					this.close(e, {isError: true, args: dojox.xmpp.consts.TRANSPORT_ERROR});
 				}
 			}));
 		}
@@ -67,16 +67,16 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 			if (this.socket.connectNB()) {
 				console.debug('Attempting to connect');
 			}else {
-				this.close("socket failed to connect", true);
+				this.close("socket failed to connect", {isError: true, args: dojox.xmpp.consts.TRANSPORT_ERROR});
 			}
 		}catch(e){
-			this.close(e,true);
+			this.close(e,{isError: true, args: dojox.xmpp.consts.TRANSPORT_ERROR});
 		}
 	},
 
 	
-	close: function(/*String*/reason, /*Boolean*/isError) {
-		if(isError===true){
+	close: function(/*String*/reason, errorParams) {
+		if(errorParams.isError===true){
 			this._socketState = this.CONSTANTS.ERROR;
 		}
 		try{
@@ -89,6 +89,7 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 		}
 		this.socket = null;
 		this.inherited(arguments);
+		console.error('Titanium: close: '+reason);
 	},
 	
 	_writeToSocket: function(data) {
@@ -99,7 +100,7 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 			this.inherited(arguments);
 			this.socket.write(data);
 		}catch(e){
-			this.close("onConnectionReset", true)
+			this.close("Write error", {isError: true, args: dojox.xmpp.consts.TRANSPORT_ERROR});
 			console.error('Titanium:_writeToSocket: ', e);
 		}
 	}
