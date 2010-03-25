@@ -75,10 +75,6 @@ dojox.xmpp.xmppSession = function(props){
 	dojo.connect(this._transport, "onTerminate", this, "onTransportTerminate");
 	dojo.connect(this._transport, "onXmppStanza", this, "handlePacket");
 
-	dojo.connect(this._transport, "onSocketError", this, "onSocketError");
-//	dojo.connect(this._transport, "onConnectionError", this,"onConnectionError");
-//	dojo.connect(this._transport, "onConnectionTimeOut", this, "onConnectionTimeOut");
-//	dojo.connect(this._transport, "onReadComplete", this, "onReadComplete");
 
 	
 	// Register the packet handlers:
@@ -663,8 +659,19 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			////console.log("xmppSession::onTransportReady()");
 		},
 
-		onTransportTerminate: function(reason, isError){
-			this.setState(dojox.xmpp.xmpp.TERMINATE, {msg:reason, error:isError});
+		onTransportTerminate: function(reason, errorParams){
+			if (errorParams.args === dojox.xmpp.consts.HOST_NOT_FOUND) {
+				this.setState(dojox.xmpp.xmpp.LOGIN_FAILURE, {
+					msg: reason,
+					error: errorParams
+				});
+			}
+			else {
+				this.setState(dojox.xmpp.xmpp.TERMINATE, {
+					msg: reason,
+					error: errorParams
+				});
+			}
 		},
 
 		onConnected: function(){
@@ -704,7 +711,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			}
 	
 			for (var i=0; i<msg.childNodes.length; i++){
-				alert(msg.childNodes.length);
 				var n = msg.childNodes[i];
 				switch(n.nodeName){
 					case 'error':
