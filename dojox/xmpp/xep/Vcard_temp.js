@@ -80,6 +80,14 @@ dojo.declare("dojox.xmpp.xep.Vcard_temp", null, {
                 var FAMILY = dojo.query(">FAMILY", N)[0];
                 var NICKNAME = dojo.query(">NICKNAME", vCard)[0];
                 var PHOTO_EXTVAL = dojo.query(">PHOTO>EXTVAL", vCard)[0];
+                var photoURL = PHOTO_EXTVAL && PHOTO_EXTVAL.textContent;
+                if(!photoURL){
+                    var PHOTO_TYPE = dojo.query(">PHOTO>TYPE", vCard)[0];
+                    var PHOTO_BINVAL = dojo.query(">PHOTO>BINVAL", vCard)[0];
+                    if(PHOTO_TYPE && PHOTO_BINVAL){
+                        photoURL = "data:" + PHOTO_TYPE.textContent + ";base64," + PHOTO_BINVAL.textContent;
+                    }
+                }
                 var vCardDetails = {
                     FN: FN && FN.textContent,
                     N: {
@@ -88,7 +96,7 @@ dojo.declare("dojox.xmpp.xep.Vcard_temp", null, {
                         FAMILY: FAMILY && FAMILY.textContent
                     },
                     NICKNAME: NICKNAME && NICKNAME.textContent,
-                    PHOTO: PHOTO_EXTVAL && PHOTO_EXTVAL.textContent
+                    PHOTO: photoURL
                 };
                 def.callback({jid:jid, vCardDetails:vCardDetails});
             }            
