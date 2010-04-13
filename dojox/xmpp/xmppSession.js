@@ -680,7 +680,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		onActive: function(){
 			////console.log("xmppSession::onActive()");
-			this.presenceService.publish({show: dojox.xmpp.presence.STATUS_ONLINE});
+			// this.presenceService.publish({show: dojox.xmpp.presence.STATUS_ONLINE});
 		},
 
 		onRegisterChatInstance: function(chatInstance){
