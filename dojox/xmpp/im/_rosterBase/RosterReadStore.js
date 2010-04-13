@@ -39,19 +39,23 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
             STATUS_INVISIBLE: 'invisible'
         }
     },
-    constructor: function(params){
-        // summary: constructor
-        this._roster = {};
-        this._groups = {};
-        this._tempPresence = {};  // For temporarily storing presence information, incase the roster isn't available yet.
-        var session = params.session;
-        this._session = session;
+    constructor: function(){
         this._features = {
             'dojo.data.api.Read': true,
             'dojo.data.api.Notification': true,
             'dojo.data.api.Identity': true
         };
-        this._vcard = params.vcard;
+    },
+    bindSession: function(session){
+        // summary:
+        //     This function is to be called for registering a new session with the RosterStore. The store would be reset if a session was already bound.
+        // session:
+        //     instance of xmppSession
+        this._roster = {};
+        this._groups = {};
+        this._tempPresence = {};  // For temporarily storing presence information, incase the roster isn't available yet.
+        this._isRosterFetched = false;
+        this._session = session;
         session.registerPacketHandler({
             name: "ChatPresenceUpdate",
             //condition: "presence:not([type]):not(x[xmlns^='http://jabber.org/protocol/muc']), presence[type='unavailable']:not(x[xmlns^='http://jabber.org/protocol/muc'])",
