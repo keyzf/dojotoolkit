@@ -3,8 +3,6 @@ dojo.provide("dojox.xmpp.xmppSession");
 //dojo.require("dojox.xmpp.TransportSession");
 dojo.require("dojox.xmpp.transportManager");
 dojo.require("dojox.xmpp.core.Auth");
-dojo.require("dojox.xmpp.im.RosterStore");
-dojo.require("dojox.xmpp.xep.Vcard_temp");
 
 dojo.require("dojox.xmpp.RosterService");
 dojo.require("dojox.xmpp.PresenceService");
@@ -79,7 +77,7 @@ dojox.xmpp.xmppSession = function(props){
 	
 	// Register the packet handlers:
 	
-    this.registerPacketHandler({
+    /*this.registerPacketHandler({
 		name: "iqSetForRoster",
 		//condition: "iq[type='set'] query[xmlns='jabber:iq:roster']",
 		condition: function(msg) {
@@ -92,7 +90,7 @@ dojox.xmpp.xmppSession = function(props){
 	        this.rosterSetHandler(msg.getElementsByTagName("query")[0]);
 	        this.sendIqResult(msg.getAttribute("id"), msg.getAttribute("from"));
 		})
-    });
+    });*/
 	
 	this.registerPacketHandler({
 		name: "iq",
@@ -622,8 +620,6 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			this.chatRegister=[];
 			this.mucRegister=[];
 			this.roster=[];
-			this.vcard = new dojox.xmpp.xep.Vcard_temp(this);
-			this.rosterStore = new dojox.xmpp.im.RosterStore({session: this, vcard: this.vcard});
 			this.setState(dojox.xmpp.xmpp.ACTIVE); // For backwards compatibilty. To be removed in 2.0.
 		},
 
