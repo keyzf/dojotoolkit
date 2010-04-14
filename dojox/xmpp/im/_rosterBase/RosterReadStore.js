@@ -253,20 +253,6 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
         // summary:
         //     See dojo.data.api.Read.getLabel()
         if (item.rosterNodeType == "contact"){
-            if(item.vcard){
-                if(item.vcard.N && item.vcard.N.GIVEN) {
-                    var label = item.vcard.N.GIVEN
-                    if(item.vcard.N.FAMILY){
-                        label += " " + item.vcard.N.FAMILY;
-                    }
-                    else if(item.vcard.N.MIDDLE){
-                        label += " " + item.vcard.N.MIDDLE;
-                    }
-                    return label;
-                } else if(item.vcard.NICKNAME){
-                    return item.vcard.NICKNAME
-                }
-            }
             return item.jid.split("@")[0]; //String
         }
         else {
@@ -614,18 +600,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
 
         this._session.roster.push(re);   // For backwards compatibility. To be removed in 2.0.
         this._roster[re.jid] = re;
-        if(this._vcard){
-            def = this._vcard.fetchVcard(re.jid);
-            def.addCallback(dojo.hitch(this, "_updateVCard"));
-        }
         return re;
-    },
-
-    _updateVCard: function(result){
-        //console.debug(result.jid, result.vCardDetails);
-        var buddyItem = this._roster[result.jid];
-        buddyItem.vcard = result.vCardDetails;
-        this.onSet(buddyItem, "vcard");
     },
 
     getStoreRepresentation: function() {
