@@ -603,23 +603,48 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
         this._roster[re.jid] = re;
         return re;
     },
-
-    getStoreRepresentation: function() {
+        
+    getStoreRepresentation: function(keywordArgs) {
+        var self = this, query = keywordArgs.query || {}, queryOptions = keywordArgs.queryOptions || {};
         var treeContents, groupNamesList = [];
-        
-        for (var groupName in this._groups) {
-            groupNamesList.push(groupName);
+        if(query.rosterNodeType === "contact"){
+            var pattern = query.name, fieldValue;
+            var regexp = dojo.data.util.filter.patternToRegExp(pattern || "", queryOptions.ignoreCase);
+            var matchItem = function(item){
+                if(!self._matchContactFields){
+                    self._matchContactFields = ["jid", "vcard.N.GIVEN", "vcard.N.FAMILY", "vcard.N.MIDDLE", "vcard.NICKNAME"];
+                }
+                for(var i=0; i < self._matchContactFields.length; i++){
+                    fieldValue = self.getValue(item, self._matchContactFields[i]);
+                    if(fieldValue){
+                        if(fieldValue.toString().match(regexp)){
+                            return true;
+                        }
+                    }
+                }
+                return false; //Boolean
+            };
+            treeContents = [];
+            for(var jid in this._roster){
+                if(matchItem(this._roster[jid])){
+                    treeContents.push(this._roster[jid]);
+                }
+            }
+        }else{
+            for (var groupName in this._groups) {
+                groupNamesList.push(groupName);
+            }
+
+            groupNamesList.sort(function(a, b) {
+                a = a.toLowerCase();
+                b = b.toLowerCase();
+                return (a===b)?0:(a<b?-1:1);
+            });
+
+            treeContents = dojo.map(groupNamesList, function(groupName) {
+                return this._groups[groupName];
+            }, this);
         }
-        
-        groupNamesList.sort(function(a, b) {
-            var a = a.toLowerCase(), b = b.toLowerCase();
-            return (a===b)?0:(a<b?-1:1);
-        });
-        
-        treeContents = dojo.map(groupNamesList, function(groupName) {
-            return this._groups[groupName];
-        }, this);
-        
         return treeContents;
     },
     
