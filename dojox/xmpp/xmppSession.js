@@ -135,7 +135,7 @@ dojox.xmpp.xmppSession = function(props){
     
 	this.registerPacketHandler({
 		name: "MucMessage",
-		condition: "message[type='groupchat'], message x[xmlns^='http://jabber.org/protocol/muc']",
+		condition: "message[type='groupchat'], message x[xmlns^='http://jabber.org/protocol/muc'], message x[xmlns^='http://jabber.org/protocol/muc#user']",
 		handler: dojo.hitch(this, function(msg){
 			var mucInstance = this.getMucInstanceFromJid(msg.getAttribute("from"));
 			// TODO: handle invites

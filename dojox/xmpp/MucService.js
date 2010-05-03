@@ -390,9 +390,9 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             this.subject = subject ? subject : null;
             this.onNewSubject(this.subject);
         }else if(nodeOfInterest = dojo.query('x[xmlns="' + dojox.xmpp.muc.USER_NS + '"] invite', msg)[0]){
-            var inviteFrom = nodeOfInterest.getAttribute("from");
+            /* var inviteFrom = nodeOfInterest.getAttribute("from");
             var reason = dojo.query("reason", nodeOfInterest)[0].textContent;
-            this.mucService.onInviteReceived(this.bareJid, inviteFrom, reason);
+            this.mucService.onInviteReceived(this.bareJid, inviteFrom, reason); */
         }else if(type === "chat" || type === "groupchat"){
             this.onNewMessage(message);
         }
@@ -598,6 +598,18 @@ dojo.declare("dojox.xmpp.MucService", null, {
 
     handleMessage: function(msg){
         var from = msg.getAttribute("from");
+        var inviteNode = dojo.query(">x[xmlns='http://jabber.org/protocol/muc#user']>invite", msg)[0];
+        if(inviteNode){
+            var invitedBy = inviteNode.getAttribute("from");
+            var reason = "";
+            reasonNode = dojo.query(">reason",inviteNode)[0]
+            if(reasonNode){
+                reason = reasonNode.textContent;
+            }
+            console.log("onInviteReceived triggered from handleMessage");
+            this.onInviteReceived(from, invitedBy, reason);
+            return;
+        }
         var roomId = dojox.xmpp.util.getNodeFromJid(from);
         var room = this.getRoom(roomId);
         room.handleMessage(msg);
