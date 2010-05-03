@@ -280,15 +280,16 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
     getValue: function( /* item */item, /* attribute-name-string */ attribute, /* value? */ defaultValue){
         // summary:
         //     See dojo.data.api.Read.getValue()
-        var values = this.getValues(item, attribute);
-        return (values.length > 0) ? values[0] : defaultValue; // mixed
+        this._assertIsItem(item);
+        this._assertIsAttribute(attribute);
+        var value = dojo.getObject(attribute, false, item);
+        return (value !== undefined) ? value : defaultValue; // mixed
     },
     getValues: function(/* item */item, /* attribute-name-string */ attribute){
         // summary:
         //     See dojo.data.api.Read.getValues()
-        this._assertIsItem(item);
-        this._assertIsAttribute(attribute);
-        return item[attribute] || []; // Array
+        var value = this.getValue(item, attribute);
+        return value?(attribute=="children"?value:[value]):[]; // Array
     },
     getAttributes: function(/* item */item){
         // summary:
