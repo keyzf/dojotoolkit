@@ -39,19 +39,23 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
             STATUS_INVISIBLE: 'invisible'
         }
     },
-    constructor: function(params){
-        // summary: constructor
-        this._roster = {};
-        this._groups = {};
-        this._tempPresence = {};  // For temporarily storing presence information, incase the roster isn't available yet.
-        var session = params.session;
-        this._session = session;
+    constructor: function(){
         this._features = {
             'dojo.data.api.Read': true,
             'dojo.data.api.Notification': true,
             'dojo.data.api.Identity': true
         };
-        this._vcard = params.vcard;
+    },
+    bindSession: function(session){
+        // summary:
+        //     This function is to be called for registering a new session with the RosterStore. The store would be reset if a session was already bound.
+        // session:
+        //     instance of xmppSession
+        this._roster = {};
+        this._groups = {};
+        this._tempPresence = {};  // For temporarily storing presence information, incase the roster isn't available yet.
+        this._isRosterFetched = false;
+        this._session = session;
         session.registerPacketHandler({
             name: "ChatPresenceUpdate",
             //condition: "presence:not([type]):not(x[xmlns^='http://jabber.org/protocol/muc']), presence[type='unavailable']:not(x[xmlns^='http://jabber.org/protocol/muc'])",
@@ -249,20 +253,6 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
         // summary:
         //     See dojo.data.api.Read.getLabel()
         if (item.rosterNodeType == "contact"){
-            if(item.vcard){
-                if(item.vcard.N && item.vcard.N.GIVEN) {
-                    var label = item.vcard.N.GIVEN
-                    if(item.vcard.N.FAMILY){
-                        label += " " + item.vcard.N.FAMILY;
-                    }
-                    else if(item.vcard.N.MIDDLE){
-                        label += " " + item.vcard.N.MIDDLE;
-                    }
-                    return label;
-                } else if(item.vcard.NICKNAME){
-                    return item.vcard.NICKNAME
-                }
-            }
             return item.jid.split("@")[0]; //String
         }
         else {
@@ -610,18 +600,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
 
         this._session.roster.push(re);   // For backwards compatibility. To be removed in 2.0.
         this._roster[re.jid] = re;
-        if(this._vcard){
-            def = this._vcard.fetchVcard(re.jid);
-            def.addCallback(dojo.hitch(this, "_updateVCard"));
-        }
         return re;
-    },
-
-    _updateVCard: function(result){
-        //console.debug(result.jid, result.vCardDetails);
-        var buddyItem = this._roster[result.jid];
-        buddyItem.vcard = result.vCardDetails;
-        this.onSet(buddyItem, "vcard");
     },
 
     getStoreRepresentation: function() {
