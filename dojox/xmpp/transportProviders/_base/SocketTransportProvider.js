@@ -25,7 +25,7 @@ dojo.declare("dojox.xmpp.transportProviders._base.SocketTransportProvider", [doj
     },
     endSession: function(){
 		var error = this.errorState || "";
-		this.close('Session terminated by server', {isError: true, args: error});
+		this.close('Session terminated by server', {isError: false, args: error});
 	},
     restartStream: function() {
 		this.inherited(arguments);
