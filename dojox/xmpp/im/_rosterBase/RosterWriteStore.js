@@ -25,21 +25,22 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
             return;
         }
         
-        //First find if an item went missing
-        var currentRosterItemsInGroup = item.children, missingChildren = [];
+        var changedRosterItems = {};
+        //First find if an item was removed
+        var currentRosterItemsInGroup = item.children, removedChildren = [];
         dojo.forEach(currentRosterItemsInGroup, function(rosterItem) {
             if(!dojo.some(values, function(newRosterItem) {
                 return rosterItem === newRosterItem;
             })) {
-                missingChildren.push(rosterItem);
+                removedChildren.push(rosterItem);
             }
         });
         
-        dojo.forEach(missingChildren, function(rosterItem) {
+        dojo.forEach(removedChildren, function(rosterItem) {
             if(dojo.indexOf(rosterItem.groups, item.name) !== -1) {
-                rosterItem.groups.splice(rosterItem.groups.indexOf(item.name), 1);
-                
-                this._saveRosterItem(rosterItem, item.name);
+                rosterItem.groups.splice(rosterItem.groups.indexOf(item.name), 1);                
+                this._updateItemInStore(rosterItem.jid, item.name, "remove");
+                changedRosterItems[rosterItem.jid] = true;
             }
         }, this);
         
@@ -58,13 +59,36 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
                 if(item.name !== this.CONSTANTS.DEFAULT_GROUP_NAME) {
                     rosterItem.groups.push(item.name);
                 }
-                
-                this._saveRosterItem(rosterItem, item.name);
+                this._updateItemInStore(rosterItem.jid, item.name, "add");
+                changedRosterItems[rosterItem.jid] = true;
             }
         }, this);
+
+        dojo.forEach(currentRosterItemsInGroup, function(rosterItem) {
+            if(changedRosterItems[rosterItem.jid]) {
+                this._saveRosterItem(rosterItem);
+            }
+        }, this);
+    },    
+    _updateItemInStore: function(jid, group, action) {
+        var rosterItemInStore = this._roster[jid];
+        if(action === "remove") {
+            rosterItemInStore.groups.splice(rosterItemInStore.groups.indexOf(group), 1);
+            this._removeRosterEntryFromGroup(rosterItemInStore, group, true);
+        }
+        else if(action === "add") {
+            rosterItemInStore.groups.push(group);
+            this._putRosterEntryInGroup(rosterItemInStore, group, true);
+            this.onNew(rosterItemInStore, {
+                item: this._groups[group],
+                attribute: "children"
+            });
+        }
     },
-    
-    _saveRosterItem: function(rosterItem, group) {
+    _saveRosterItem: function(rosterItem) {
+        console.warn("saving " + rosterItem.jid);
+        for(var i in rosterItem.groups) console.warn(rosterItem.groups[i]);
+        console.warn("done");
         var req = {
             id: this._session.getNextIqId(),
             from: this._session.jid + "/" + this._session.resource,
@@ -86,9 +110,10 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
         
         console.log(request.toString());
         var def = this._session.dispatchPacket(request.toString(),"iq",req.id);
+        /*
         def.addCallback(dojo.hitch(function() {
             this.onSet(this._groups[group], "children");
-        }));
+        }));*/
     },
     
     revert: function() {
