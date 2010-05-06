@@ -72,14 +72,16 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
     _updateItemInStore: function(jid, group, action) {
         var rosterItemInStore = this._roster[jid];
         if(action === "remove") {
-            for(var i in rosterItemInStore.groups) console.warn(rosterItemInStore.groups[i]);
-            rosterItemInStore.groups.splice(rosterItemInStore.groups.indexOf(group), 1);
-            for(var i in rosterItemInStore.groups) console.warn(rosterItemInStore.groups[i]);            
+            if(group != this.CONSTANTS.DEFAULT_GROUP_NAME) {
+                rosterItemInStore.groups.splice(rosterItemInStore.groups.indexOf(group), 1);
+            }
             this._removeRosterEntryFromGroup(rosterItemInStore, group, true);
             this._removeEmptyGroups(); // TODO: Check only for this group
         }
         else if(action === "add") {
-            rosterItemInStore.groups.push(group);
+            if(group != this.CONSTANTS.DEFAULT_GROUP_NAME) {
+                rosterItemInStore.groups.push(group);
+            }
             this._putRosterEntryInGroup(rosterItemInStore, group, true);
             this.onNew(rosterItemInStore, {
                 item: this._groups[group],
@@ -104,7 +106,6 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
         dojo.forEach(rosterItem.groups, function(group) {
             request.append("<group>" + group + "</group>");
         });
-        
         request.append("</item></query></iq>");
         
         console.log(request.toString());
