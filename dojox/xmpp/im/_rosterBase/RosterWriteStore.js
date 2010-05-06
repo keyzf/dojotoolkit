@@ -86,9 +86,6 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
         }
     },
     _saveRosterItem: function(rosterItem) {
-        console.warn("saving " + rosterItem.jid);
-        for(var i in rosterItem.groups) console.warn(rosterItem.groups[i]);
-        console.warn("done");
         var req = {
             id: this._session.getNextIqId(),
             from: this._session.jid + "/" + this._session.resource,
