@@ -75,6 +75,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
         if(action === "remove") {
             rosterItemInStore.groups.splice(rosterItemInStore.groups.indexOf(group), 1);
             this._removeRosterEntryFromGroup(rosterItemInStore, group, true);
+            this._removeEmptyGroups();
         }
         else if(action === "add") {
             rosterItemInStore.groups.push(group);
