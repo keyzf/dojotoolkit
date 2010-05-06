@@ -20,7 +20,6 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
     setValues: function(item, attribute, values) {
         this._assertIsItem(item);
         this._assertIsAttribute(attribute);
-        
         if(item.rosterNodeType !== "group" || attribute !== "children") {
             return;
         }
@@ -37,8 +36,8 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
         });
         
         dojo.forEach(removedChildren, function(rosterItem) {
-            if(dojo.indexOf(rosterItem.groups, item.name) !== -1) {
-                rosterItem.groups.splice(rosterItem.groups.indexOf(item.name), 1);                
+            if(item.name === this.CONSTANTS.DEFAULT_GROUP_NAME || dojo.indexOf(rosterItem.groups, item.name) !== -1) {
+                rosterItem.groups.splice(rosterItem.groups.indexOf(item.name), 1);
                 this._updateItemInStore(rosterItem.jid, item.name, "remove");
                 changedRosterItems[rosterItem.jid] = true;
             }
@@ -55,7 +54,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
         });
         
         dojo.forEach(newChildren, function(rosterItem) {
-            if(dojo.indexOf(rosterItem.groups, item.name) === -1 && item.name !== this.CONSTANTS.DEFAULT_GROUP_NAME) {
+            if(dojo.indexOf(rosterItem.groups, item.name) === -1) {
                 if(item.name !== this.CONSTANTS.DEFAULT_GROUP_NAME) {
                     rosterItem.groups.push(item.name);
                 }
@@ -73,9 +72,11 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
     _updateItemInStore: function(jid, group, action) {
         var rosterItemInStore = this._roster[jid];
         if(action === "remove") {
+            for(var i in rosterItemInStore.groups) console.warn(rosterItemInStore.groups[i]);
             rosterItemInStore.groups.splice(rosterItemInStore.groups.indexOf(group), 1);
+            for(var i in rosterItemInStore.groups) console.warn(rosterItemInStore.groups[i]);            
             this._removeRosterEntryFromGroup(rosterItemInStore, group, true);
-            this._removeEmptyGroups();
+            this._removeEmptyGroups(); // TODO: Check only for this group
         }
         else if(action === "add") {
             rosterItemInStore.groups.push(group);
