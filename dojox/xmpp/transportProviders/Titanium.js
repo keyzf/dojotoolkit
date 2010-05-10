@@ -29,7 +29,7 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 			try {
 				this._streamReader.parse(data);
 			}catch(e){
-				console.warning("socket.onRead: ", e);
+				console.error("socket.onRead: ", e);
 			}
 		}));
 		
