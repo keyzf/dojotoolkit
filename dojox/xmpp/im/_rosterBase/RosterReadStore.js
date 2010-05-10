@@ -249,6 +249,33 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
             return "#group#" + item.name;
         }
     },
+    fetchItemByIdentity: function(/* object */ keywordArgs){
+        // summary:
+        //     see dojo.data.api.Identity.fetchItemByIdentity()
+        keywordArgs = keywordArgs || {};
+        var item = null, error, scope = keywordArgs.scope || dojo.global;
+        if(keywordArgs.identity && typeof keywordArgs.onItem == "function"){
+            var identity = keywordArgs.identity;
+            if(identity.indexOf("#contact#")==0){
+                var jid = identity.substring(9);
+                item = this._roster[jid];
+            }else if(identity.indexOf("#group#")==0){
+                var name = identity.substring(7);
+                item = this._group[name];
+            }
+            else{
+                error = "Invalid identity";
+            }
+            if(!error){
+                dojo.hitch(scope , keywordArgs.onItem)(item);
+            }
+        }else{
+            error = "Insufficient parameters";
+        }
+        if(error && typeof keywordArgs.onError == "function"){
+            dojo.hitch(scope, keywordArgs.onError)(error);
+        }
+    },
     getLabel: function(/* item */item){
         // summary:
         //     See dojo.data.api.Read.getLabel()
