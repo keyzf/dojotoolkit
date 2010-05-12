@@ -142,9 +142,8 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
 
         // first do a feature check on the room before entering
         if(!this.features){
-            var retval;
             var successHandle = dojo.connect(this, "onRoomInfoReceived", this, function(){
-                retval = this.enter(nick, password, setPresence);
+                this.enter(nick, password, setPresence);
                 dojo.disconnect(successHandle);
                 dojo.disconnect(failHandle);
             });
@@ -154,7 +153,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
                 dojo.disconnect(failHandle);
             });
             this.getInfo();
-            return retval;
+            return;
         }
 
         // password required?
@@ -186,8 +185,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         request.append(x);
         request.append("</presence>");
 
-        var def = this.session.dispatchPacket(request.toString());
-        return def;
+        this.session.dispatchPacket(request.toString());
     },
     
     exit: function(status){
