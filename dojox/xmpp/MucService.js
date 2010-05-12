@@ -424,9 +424,9 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
                 }
                 this._addOccupant(nick, item);
             }else if(type === "unavailable"){
-                var statusNode = dojo.query(xNodeQuery + " status", msg)[0];
+                var statusNode = dojo.query(xNodeQuery + " status[code='303']", msg)[0];
                 // nickname change only
-                if(statusNode && statusNode.getAttribute("code") === "303"){
+                if(statusNode){
                     var newNick = itemNode.getAttribute("nick");
                     this._updateNick(nick, newNick);
                     if(nick === this.nick){
