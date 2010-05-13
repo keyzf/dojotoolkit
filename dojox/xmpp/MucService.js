@@ -20,7 +20,7 @@ dojox.xmpp.muc.roomState = {
 dojo.declare("dojox.xmpp.muc.Room", null, {
     state: dojox.xmpp.muc.roomState.NONE,
     
-    constructor: function(jid, mucService){
+    constructor: function(jid, mucService, isInstantRoom){
         this.bareJid = jid;
         this.roomId = dojox.xmpp.util.getNodeFromJid(jid);
         this.domain = dojox.xmpp.util.getDomainFromJid(jid);
@@ -28,6 +28,8 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         this.session = mucService.session;
         this._occupants = {};
         this.subject = null;
+        this.isInstantRoom = isInstantRoom;
+        mucService.rooms[this.roomId] = this;
     },
 
     roomJid: function(){
@@ -141,7 +143,8 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         this.nick = nick;
 
         // first do a feature check on the room before entering
-        if(!this.features){
+        // skip if this is an instant room
+        if(!this.features && !this.isInstantRoom){
             var successHandle = dojo.connect(this, "onRoomInfoReceived", this, function(){
                 this.enter(nick, password, setPresence);
                 dojo.disconnect(successHandle);
@@ -157,7 +160,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         }
 
         // password required?
-        if(this.features.passwordProtected && !password){
+        if(!this.isInstantRoom && this.features.passwordProtected && !password){
             throw new Error("MucService::Room::enter() Can't enter room -- need password.");
         }
 
@@ -454,7 +457,11 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             if(fromNick === this.nick){
                 if(type !== "unavailable"){
                     this.state = dojox.xmpp.muc.roomState.ENTERED;
-                    this.onEnter();
+                    if(this.isInstantRoom && dojo.query(xNodeQuery + " status[code='201']", msg)[0]){
+                        this._acceptDefaultConfiguration();
+                    }else{
+                        this.onEnter();
+                    }
                 }else{
                     this.state = dojox.xmpp.muc.roomState.NONE;
                 }
@@ -474,6 +481,62 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             }
             break;
         }
+    },
+    _requestConfigurationForm: function(){
+        //<iq id="jcl_11" to="test1234@conf.directi.com" type="get"><query xmlns="http://jabber.org/protocol/muc#owner"/></iq>
+        var iqId = this.session.getNextIqId();
+        var req = {
+            id: iqId,
+            from: dojox.xmpp.util.encodeJid(this.session.fullJid()),
+            to: dojox.xmpp.util.encodeJid(this.bareJid),
+            type: "get"
+        }
+        var request = new dojox.string.Builder(dojox.xmpp.util.createElement("iq", req, false));
+        request.append(dojox.xmpp.util.createElement("query", {xmlns: dojox.xmpp.muc.OWNER_NS}, true));
+        request.append("</iq>");
+
+        var def = this.session.dispatchPacket(request.toString(), "iq", req.id);
+        def.addCallback(this, function(res){
+            if(res.getAttribute("type") === "result"){
+                this._acceptDefaultConfiguration();
+            }else{
+                var err = this.session.processXmppError(res);
+                this.onEnterFailed(err);
+            }
+        });
+    },
+    _acceptDefaultConfiguration: function(){
+        //<iq id="jcl_11" to="test1234@conf.directi.com" type='set'>
+        // <query xmlns='http://jabber.org/protocol/muc#owner'>
+        //  <x xmlns='jabber:x:data' type='submit'/>
+        // </query>
+        //</iq>
+
+        var iqId = this.session.getNextIqId();
+        var req = {
+            id: iqId,
+            from: dojox.xmpp.util.encodeJid(this.session.fullJid()),
+            to: dojox.xmpp.util.encodeJid(this.bareJid),
+            type: "set"
+        }
+        var request = new dojox.string.Builder(dojox.xmpp.util.createElement("iq", req, false));
+        request.append(dojox.xmpp.util.createElement("query", {xmlns: dojox.xmpp.muc.OWNER_NS}, false));
+        request.append(dojox.xmpp.util.createElement("x", {xmlns: "jabber:x:data", type: "submit"}, true));
+        request.append("</query></iq>");
+
+        // only sending packet to unlock room, not waiting for any reply from server. Remove this line and uncomment the next block, when server starts sending replies for this packet.
+        this.session.dispatchPacket(request.toString());
+        this.onEnter();
+
+        /*var def = this.session.dispatchPacket(request.toString(), "iq", req.id);
+        def.addCallback(this, function(res){
+            if(res.getAttribute("type") === "result"){
+                this.onEnter();
+            }else{
+                var err = this.session.processXmppError(res);
+                this.onEnterFailed(err);
+            }
+        });*/
     },
     _onExit: function(){
         this.state = dojox.xmpp.muc.roomState.NONE;
