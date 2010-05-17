@@ -56,9 +56,6 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
         this._matchTypeIdAttribute = {};
 		this.onTerminate(reason, errorParams);
 	},
-	onTerminate: function(reason, errorParams){
-		
-	},
 	setState: function(state, message) {
         if (this.state != state) {
             if (this["on"+state]){
@@ -91,11 +88,6 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 		return def;
 	},
 	
-	onStreamReady: function() {
-		// Event signalling that the stream is ready to interact with
-	},
-
-
 	stanzaHandler: function(msg) {
 		this._resetKeepalive();
 		this.onXmppStanza(msg);
@@ -107,5 +99,17 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
 		}
         
 		return msg;
+	},
+
+	onStreamReady: function() {
+		// Event signalling that the stream is ready to interact with
+	},
+
+	onTerminate: function(reason, errorParams){
+		// Event
+	},
+
+	onXmppStanza: function(msg){
+		// Event triggered on every stanza received
 	}
 });
