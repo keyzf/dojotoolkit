@@ -48,7 +48,6 @@ dojo.declare("dojox.xmpp.core._sasl.Plain", dojox.xmpp.core._sasl._Base, {
 	closeAuthTag: false,
 
 	appendToAuth: function(auth){
-		console.log(this.session, this.session.jid);
 		var id = this.session.jid;
 		var index = this.session.jid.indexOf('@');
 		if (index != -1){
