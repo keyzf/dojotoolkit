@@ -14,7 +14,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
     // CONSTANTS: all member constants are declared under this object
     CONSTANTS: {
         // CONSTANTS.DEFAULT_GROUP_NAME: Roster items that have no groups are added to this group
-        DEFAULT_GROUP_NAME: "Unfiled Contacts",
+        DEFAULT_GROUP_NAME: "Unfiled",
 
         presence: {
             UPDATE: 201,
