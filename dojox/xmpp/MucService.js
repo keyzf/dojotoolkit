@@ -256,7 +256,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
     
     changeSubject: function(string){
         if(!string){
-            throw new Error("MucService::Room::changeSubject() string is null or undefined");
+            string="";
         }
         var req = {
             to: this.bareJid,
@@ -385,8 +385,9 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
         var nodeOfInterest;
         if(nodeOfInterest = dojo.query("subject", msg)[0]){
             var subject = nodeOfInterest.textContent;
+            var fromNick = dojox.xmpp.util.getResourceFromJid(message.from);
             this.subject = subject ? subject : null;
-            this.onNewSubject(this.subject);
+            this.onNewSubject(this.subject, fromNick);
         }else if(nodeOfInterest = dojo.query('x[xmlns="' + dojox.xmpp.muc.USER_NS + '"] invite', msg)[0]){
             /* var inviteFrom = nodeOfInterest.getAttribute("from");
             var reason = dojo.query("reason", nodeOfInterest)[0].textContent;
@@ -493,7 +494,7 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
 
     onExit: function(){},
 
-    onNewSubject: function(subject){},
+    onNewSubject: function(subject, fromNick){},
 
     onNewOccupant: function(item){},
     
