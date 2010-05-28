@@ -166,6 +166,14 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
             from: dojox.xmpp.util.encodeJid(this.session.fullJid()),
             to: dojox.xmpp.util.encodeJid(this.bareJid + "/" + nick)
         }, false));
+        var x = new dojox.string.Builder(dojox.xmpp.util.createElement("x", {
+            xmlns: dojox.xmpp.muc.NS
+        }, false));
+        if(password){
+            x.append("<password>" + password + "</password>");
+        }
+        x.append("</x>");
+        request.append(x);
         if(setPresence){
             if(setPresence.show){
                 request.append("<show>" + setPresence.show + "</show>");
@@ -174,15 +182,6 @@ dojo.declare("dojox.xmpp.muc.Room", null, {
                 request.append("<status>" + setPresence.status+ "</status>");
             }
         }
-        var x = new dojox.string.Builder(dojox.xmpp.util.createElement("x", {
-            xmlns: dojox.xmpp.muc.NS
-        }, false));
-        if(password){
-            x.append("<password>" + password + "</password>");
-        }
-        x.append("</x>");
-
-        request.append(x);
         request.append("</presence>");
 
         this.session.dispatchPacket(request.toString());
