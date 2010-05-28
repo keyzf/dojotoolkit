@@ -89,7 +89,7 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 		}
 		this.socket = null;
 		this.inherited(arguments);
-		console.error('Titanium: close: '+reason);
+		console.debug('Titanium: close: '+reason);
 	},
 	
 	_writeToSocket: function(data) {
