@@ -70,12 +70,13 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
         }, this);
     },    
     _updateItemInStore: function(jid, group, action) {
+        console.warn(jid + " " + action + " " + group);
         var rosterItemInStore = this._roster[jid];
         if(action === "remove") {
             if(group != this.CONSTANTS.DEFAULT_GROUP_NAME) {
                 rosterItemInStore.groups.splice(rosterItemInStore.groups.indexOf(group), 1);
             }
-            this._removeRosterEntryFromGroup(rosterItemInStore, group, true);
+            this._removeRosterEntryFromGroup(rosterItemInStore, group);
             this._removeEmptyGroups(); // TODO: Check only for this group
         }
         else if(action === "add") {
@@ -89,7 +90,15 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
             });
         }
     },
-    _saveRosterItem: function(rosterItem) {
+    _saveRosterItem: function(rosterItem, action) {
+        if(action === "remove") {
+             var sessionWrapper = pw.desktop.getKernel().getCurrentUserSession();
+             if (sessionWrapper) {
+                 var session = sessionWrapper.getSession();
+                 session.rosterService.removeRosterItem(rosterItem.jid);
+             }
+             return;
+        }
         var req = {
             id: this._session.getNextIqId(),
             from: this._session.jid + "/" + this._session.resource,

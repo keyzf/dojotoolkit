@@ -405,6 +405,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
                 children: []
             };
             this._groups[groupName] = groupItem;
+
             oldGroupItemChildren = null;
             //this.onNew(groupItem);
         } else {
@@ -429,11 +430,16 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
     _removeRosterEntryFromGroup: function(buddyItem, groupName, fireOnDelete) {
         var groupItem = this._groups[groupName];
         if (groupItem && dojo.indexOf(groupItem.children, buddyItem) !== -1) {
+            var oldGroupItemChildren = [].concat(groupItem.children);
             var deletedBuddy = groupItem.children.splice(dojo.indexOf(groupItem.children, buddyItem), 1);
             if(fireOnDelete) {
                 this.onDelete(deletedBuddy[0]);
             }
-
+            /*
+            else {
+                this.onSet(groupItem, "children", oldGroupItemChildren, groupItem.children);
+            }
+            */
             this._setGroupCounts(groupName);
         }
 
