@@ -38,7 +38,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
         dojo.forEach(removedChildren, function(rosterItem) {
             if(item.name === this.CONSTANTS.DEFAULT_GROUP_NAME || dojo.indexOf(rosterItem.groups, item.name) !== -1) {
                 rosterItem.groups.splice(rosterItem.groups.indexOf(item.name), 1);
-                this._updateItemInStore(rosterItem.jid, item.name, "remove");
+                this._updateItemInStore(rosterItem.jid, item.name, "remove", true);
                 changedRosterItems[rosterItem.jid] = true;
             }
         }, this);
@@ -58,7 +58,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
                 if(item.name !== this.CONSTANTS.DEFAULT_GROUP_NAME) {
                     rosterItem.groups.push(item.name);
                 }
-                this._updateItemInStore(rosterItem.jid, item.name, "add");
+                this._updateItemInStore(rosterItem.jid, item.name, "add", true);
                 changedRosterItems[rosterItem.jid] = true;
             }
         }, this);
@@ -69,21 +69,20 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
             }
         }, this);
     },    
-    _updateItemInStore: function(jid, group, action) {
-        console.warn(jid + " " + action + " " + group);
+    _updateItemInStore: function(jid, group, action, fireOnEvent) {
         var rosterItemInStore = this._roster[jid];
         if(action === "remove") {
             if(group != this.CONSTANTS.DEFAULT_GROUP_NAME) {
                 rosterItemInStore.groups.splice(rosterItemInStore.groups.indexOf(group), 1);
             }
-            this._removeRosterEntryFromGroup(rosterItemInStore, group);
+            this._removeRosterEntryFromGroup(rosterItemInStore, group, fireOnEvent);
             this._removeEmptyGroups(); // TODO: Check only for this group
         }
         else if(action === "add") {
             if(group != this.CONSTANTS.DEFAULT_GROUP_NAME) {
                 rosterItemInStore.groups.push(group);
             }
-            this._putRosterEntryInGroup(rosterItemInStore, group, true);
+            this._putRosterEntryInGroup(rosterItemInStore, group, fireOnEvent);
             this.onNew(rosterItemInStore, {
                 item: this._groups[group],
                 attribute: "children"

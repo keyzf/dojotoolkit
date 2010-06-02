@@ -435,11 +435,9 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
             if(fireOnDelete) {
                 this.onDelete(deletedBuddy[0]);
             }
-            /*
             else {
                 this.onSet(groupItem, "children", oldGroupItemChildren, groupItem.children);
             }
-            */
             this._setGroupCounts(groupName);
         }
 
