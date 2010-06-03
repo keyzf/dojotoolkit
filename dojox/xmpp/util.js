@@ -9,6 +9,13 @@ dojox.xmpp.util.xmlEncode = function(str) {
 	return str;
 }
 
+dojox.xmpp.util.xmlDecode = function(str) {
+    if(str) {
+        str = str.replace("&amp;", "&").replace("&gt;", ">").replace("&lt;", "<").replace("&apos;", "'").replace("&quot;", '"');
+    }
+    return str;
+}
+
 dojox.xmpp.util.encodeJid = function(jid) {
 		var nodeLength = jid.indexOf("@");
 		var buffer = new dojox.string.Builder();

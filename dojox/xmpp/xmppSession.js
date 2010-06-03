@@ -58,6 +58,7 @@ dojox.xmpp.xmppSession = function(props){
 	this.roster = [];
 	this.chatRegister = [];
 	this.mucRegister = [];
+	this.featureNamespaces = {};
 	this._iqId = Math.round(Math.random() * 1000000000);
 	this._registeredPacketHandlers = [];
 
@@ -92,7 +93,9 @@ dojox.xmpp.xmppSession = function(props){
 		})
     });*/
 	
-	this.registerPacketHandler({
+	//Removed for time being, as the session-initiate and session-accept stanzas for jingle file-transfer fall in this category
+	//Needed to be taken care of independently
+	/*this.registerPacketHandler({
 		name: "iq",
 		//condition: "iq[type='set']:not(query)",
 		condition: function(msg) {
@@ -102,8 +105,10 @@ dojox.xmpp.xmppSession = function(props){
 			return false;
 		},
 		handler: dojo.hitch(this, function(msg) {
+			console.warn("D packet", msg)
     		this.sendStanzaError('iq', this.domain, msg.getAttribute('id'), 'cancel', 'service-unavailable', 'service not implemented');
-		})
+		}),
+		featureNamespace: ""
     });
 	
 	/*
@@ -178,6 +183,46 @@ dojox.xmpp.xmppSession = function(props){
 			this.close();
 		})
     });
+	
+	this.registerPacketHandler({
+        name: "DiscoInfo",
+        condition: "iq[type='get'] query[xmlns = 'http://jabber.org/protocol/disco#info']",
+        handler: dojo.hitch(this, function(msg) {
+            var id = msg.getAttribute('id');
+            var to = msg.getAttribute('from');
+            var index = to.indexOf('@');
+            var name = to.substr(0, index); 
+            var session = pw.desktop.getKernel().getCurrentUserSession().getSession();
+            var featureList = [];
+            var j =0;
+            for(var i in this.featureNamespaces){
+                if (this.featureNamespaces[i]) {
+                    featureList[j++] = {
+                        "@var": i
+                    }
+                }
+            }
+            var response = {
+                iq: {
+                    "@from": dojox.xmpp.util.encodeJid(session.fullJid()),
+                    "@id": id,
+                    "@to": to,
+                    "@type": 'result',
+                    query: {
+                        "@xmlns": 'http://jabber.org/protocol/disco#info',
+                        feature: featureList,
+                        identity: {
+                            "@category": 'user',
+                            "@name": name,
+                            "@type": 'client'
+                        }
+                    }
+                }
+            }
+        session.dispatchPacket(dojox.xmpp.util.json2xml(response), "iq", id);
+        }),
+     featureNamespace: ['http://jabber.org/protocol/disco#info']
+    });
 };
 
 
@@ -214,6 +259,11 @@ dojo.extend(dojox.xmpp.xmppSession, {
 			}
 			
 			handlerInformation.execCondition = newCondition;
+			if(handlerInformation.featureNamespace){
+				for (var i = 0; i < handlerInformation.featureNamespace.length; i++) {
+					this.featureNamespaces[handlerInformation.featureNamespace[i]] = true;
+				}
+			}
 			var newLength = this._registeredPacketHandlers.push(handlerInformation); 
 			return --newLength;
         },
@@ -223,6 +273,8 @@ dojo.extend(dojox.xmpp.xmppSession, {
                 this._registeredPacketHandlers[registerHandle] = null;
 			}
 		},
+		
+		
 
 		handlePacket: function(msg){
 			//console.log("xmppSession::processProtocolResponse() ", msg, msg.nodeName);
