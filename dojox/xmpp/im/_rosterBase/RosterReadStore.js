@@ -706,9 +706,9 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterReadStore", null, {
                     } catch(e) {
                         console.log(e);
                     }
+                    this.onRosterLoaded();
                     this._isRosterFetched = true;
                     findCallback(this.getStoreRepresentation(keywordArgs), keywordArgs);
-                    this.onRosterLoaded();
                     session.setState(dojox.xmpp.xmpp.ACTIVE); // For backwards compatibilty. To be removed in 2.0.
                     session.onRosterUpdated(); // For backwards compatibilty. To be removed in 2.0.
                 } else if (msg.getAttribute('type') == "error") {
