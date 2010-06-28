@@ -76,7 +76,7 @@ dojo.declare("dojox.xmpp.transportProviders.Titanium", [dojox.xmpp.transportProv
 
 	
 	close: function(/*String*/reason, errorParams) {
-		if(errorParams.isError===true){
+		if(errorParams && errorParams.isError===true){
 			this._socketState = this.CONSTANTS.ERROR;
 		}
 		try{

@@ -625,6 +625,7 @@ dojo.extend(dojox.xmpp.xmppSession, {
 
 		onLoginFailure: function(msg){
 			//console.log("xmppSession::onLoginFailure ", msg);
+			this._transport.close();
 		},
 
 		onSearchResults: function(results){

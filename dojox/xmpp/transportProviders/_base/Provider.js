@@ -54,7 +54,9 @@ dojo.declare("dojox.xmpp.transportProviders._base.Provider", null, {
         this._keepalive = null;
         this._deferredRequests = {};
         this._matchTypeIdAttribute = {};
-		this.onTerminate(reason, errorParams);
+		if (reason || errorParams) {
+			this.onTerminate(reason, errorParams);
+		}
 	},
 	setState: function(state, message) {
         if (this.state != state) {
