@@ -17,57 +17,67 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
         console.log("setValue ", item, attribute, value);
     },
     
-    setValues: function(item, attribute, values) {
-        this._assertIsItem(item);
-        this._assertIsAttribute(attribute);
-        if(item.rosterNodeType !== "group" || attribute !== "children") {
-            return;
+    setValues: function() {
+        var args = [];
+        if(!arguments[0].length) {
+            args.push({
+                item: arguments[0],
+                attribute: arguments[1],
+                values: arguments[2]
+            });
         }
-        
+        else {
+            for(var i = 0; i < arguments.length; ++i) {
+                args.push(arguments[i]);
+            }
+        }
         var changedRosterItems = {};
-        //First find if an item was removed
-        var currentRosterItemsInGroup = item.children, removedChildren = [];
-        dojo.forEach(currentRosterItemsInGroup, function(rosterItem) {
-            if(!dojo.some(values, function(newRosterItem) {
-                return rosterItem === newRosterItem;
-            })) {
-                removedChildren.push(rosterItem);
+        args.forEach(dojo.hitch(this, function(arg) {
+            var item = arg.item, attribute = arg.attribute, values = arg.values;
+            this._assertIsItem(item);
+            this._assertIsAttribute(attribute);
+            if(item.rosterNodeType !== "group" || attribute !== "children") {
+                return;
             }
-        });
-        
-        dojo.forEach(removedChildren, function(rosterItem) {
-            if(item.name === this.CONSTANTS.DEFAULT_GROUP_NAME || dojo.indexOf(rosterItem.groups, item.name) !== -1) {
-                rosterItem.groups.splice(rosterItem.groups.indexOf(item.name), 1);
-                this._updateItemInStore(rosterItem.jid, item.name, "remove", true);
-                changedRosterItems[rosterItem.jid] = true;
-            }
-        }, this);
-        
-        //Now, find if a item has been added
-        var newChildren = [];
-        dojo.forEach(values, function(newRosterItem) {
-            if(!dojo.some(currentRosterItemsInGroup, function(rosterItem) {
-                return rosterItem === newRosterItem;
-            })) {
-                newChildren.push(newRosterItem);
-            }
-        });
-        
-        dojo.forEach(newChildren, function(rosterItem) {
-            if(dojo.indexOf(rosterItem.groups, item.name) === -1) {
-                if(item.name !== this.CONSTANTS.DEFAULT_GROUP_NAME) {
-                    rosterItem.groups.push(item.name);
+            
+            //First find if an item was removed
+            var currentRosterItemsInGroup = item.children, removedChildren = [];
+            dojo.forEach(currentRosterItemsInGroup, function(rosterItem) {
+                if(!dojo.some(values, function(newRosterItem) {
+                    return rosterItem === newRosterItem;
+                })) {
+                    removedChildren.push(rosterItem);
                 }
-                this._updateItemInStore(rosterItem.jid, item.name, "add", true);
-                changedRosterItems[rosterItem.jid] = true;
-            }
-        }, this);
+            });
+            
+            dojo.forEach(removedChildren, function(rosterItem) {
+                if(item.name === this.CONSTANTS.DEFAULT_GROUP_NAME || dojo.indexOf(rosterItem.groups, item.name) !== -1) {
+                    this._updateItemInStore(rosterItem.jid, item.name, "remove", true);
+                    changedRosterItems[rosterItem.jid] = rosterItem;
+                }
+            }, this);
+            
+            //Now, find if a item has been added
+            var newChildren = [];
+            dojo.forEach(values, function(newRosterItem) {
+                if(!dojo.some(currentRosterItemsInGroup, function(rosterItem) {
+                    return rosterItem === newRosterItem;
+                })) {
+                    newChildren.push(newRosterItem);
+                }
+            });
+            
+            dojo.forEach(newChildren, function(rosterItem) {
+                if(dojo.indexOf(rosterItem.groups, item.name) === -1) {
+                    this._updateItemInStore(rosterItem.jid, item.name, "add", true);
+                    changedRosterItems[rosterItem.jid] = rosterItem;
+                }
+            }, this);
 
-        dojo.forEach(currentRosterItemsInGroup, function(rosterItem) {
-            if(changedRosterItems[rosterItem.jid]) {
-                this._saveRosterItem(rosterItem);
-            }
-        }, this);
+        }));
+        for(var jid in changedRosterItems) {
+            this._saveRosterItem(changedRosterItems[jid]);
+        }
     },    
     _updateItemInStore: function(jid, group, action, fireOnEvent) {
         var rosterItemInStore = this._roster[jid];
@@ -75,7 +85,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
             if(group != this.CONSTANTS.DEFAULT_GROUP_NAME) {
                 rosterItemInStore.groups.splice(rosterItemInStore.groups.indexOf(group), 1);
             }
-            this._removeRosterEntryFromGroup(rosterItemInStore, group, fireOnEvent);
+            this._removeRosterEntryFromGroup(rosterItemInStore, group, !rosterItemInStore.groups.length);
             this._removeEmptyGroups(); // TODO: Check only for this group
         }
         else if(action === "add") {
@@ -83,10 +93,6 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
                 rosterItemInStore.groups.push(group);
             }
             this._putRosterEntryInGroup(rosterItemInStore, group, fireOnEvent);
-            this.onNew(rosterItemInStore, {
-                item: this._groups[group],
-                attribute: "children"
-            });
         }
     },
     _saveRosterItem: function(rosterItem, action) {
