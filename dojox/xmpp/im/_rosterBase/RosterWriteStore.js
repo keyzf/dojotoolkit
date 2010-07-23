@@ -27,8 +27,8 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
             });
         }
         else {
-            for(var i = 0; i < arguments.length; ++i) {
-                args.push(arguments[i]);
+            for(var i = 0; i < arguments[0].length; ++i) {
+                args.push(arguments[0][i]);
             }
         }
         var changedRosterItems = {};
