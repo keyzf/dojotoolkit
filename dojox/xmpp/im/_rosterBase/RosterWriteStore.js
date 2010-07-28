@@ -1,6 +1,7 @@
 dojo.provide("dojox.xmpp.im._rosterBase.RosterWriteStore");
 
 dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
+    _toBeUpdated: {},
     constructor: function() {
         this._features["dojo.data.api.Write"] = true;
     },
@@ -32,26 +33,29 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
                 args.push(arguments[0][i]);
             }
         }
-        var changedRosterItems = {};
+        this._toBeUpdated = {};
         args.forEach(dojo.hitch(this, function(arg) {
             var item = arg.item, attribute = arg.attribute, values = arg.values;
             this._assertIsItem(item);
             this._assertIsAttribute(attribute);
             if(item.rosterNodeType === "group" && attribute === "children") {
-                this._setGroupChildrenInStore(item, attribute, values, changedRosterItems);
+                this._setGroupChildrenInStore(item, attribute, values, this._toBeUpdated);
             }
             else if(item.rosterNodeType === "contact" && attribute === "groups") {
                 values.forEach(dojo.hitch(this, function(value) {
                     this._updateItemInStore(item.jid, value, "add", true);
-                    changedRosterItems[item.jid] = item;
+                    this._toBeUpdated[item.jid] = item;
                 }));
             }
         }));
-        for(var jid in changedRosterItems) {
-            this._saveRosterItem(changedRosterItems[jid]);
-        }
+        setTimeout(dojo.hitch(this, function() {
+            for(var jid in this._toBeUpdated) {
+                this._saveRosterItem(this._toBeUpdated[jid]);
+                delete this._toBeUpdated[jid];
+            }
+        }), 1000);
     },
-    _setGroupChildrenInStore: function(item, attribute, values, changedRosterItems) {            
+    _setGroupChildrenInStore: function(item, attribute, values) {
         //First find if an item was removed
         var currentRosterItemsInGroup = item.children, removedChildren = [];
         dojo.forEach(currentRosterItemsInGroup, function(rosterItem) {
@@ -65,7 +69,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
         dojo.forEach(removedChildren, function(rosterItem) {
             if(item.name === this.CONSTANTS.DEFAULT_GROUP_NAME || dojo.indexOf(rosterItem.groups, item.name) !== -1) {
                 this._updateItemInStore(rosterItem.jid, item.name, "remove", true);
-                changedRosterItems[rosterItem.jid] = rosterItem;
+                this._toBeUpdated[rosterItem.jid] = rosterItem;
             }
         }, this);
 
@@ -82,7 +86,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
         dojo.forEach(newChildren, function(rosterItem) {
             if(dojo.indexOf(rosterItem.groups, item.name) === -1) {
                 this._updateItemInStore(rosterItem.jid, item.name, "add", true);
-                changedRosterItems[rosterItem.jid] = rosterItem;
+                this._toBeUpdated[rosterItem.jid] = rosterItem;
             }
         }, this);        
     },
