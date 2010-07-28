@@ -96,6 +96,7 @@ dojo.declare("dojox.xmpp.im._rosterBase.RosterWriteStore", null, {
             this._removeEmptyGroups(); // TODO: Check only for this group
         }
         else if(action === "add") {
+            if(rosterItemInStore.groups.indexOf(group) !== -1) return;
             if(group != this.CONSTANTS.DEFAULT_GROUP_NAME) {
                 rosterItemInStore.groups.push(group);
             }
