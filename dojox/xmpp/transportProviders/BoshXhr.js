@@ -5,6 +5,7 @@ dojo.require("dojox.xmpp.transportProviders._base.BoshTransportProvider");
 dojo.declare("dojox.xmpp.transportProviders.BoshXhr", dojox.xmpp.transportProviders._base.BoshTransportProvider, {
 	open: function() {
 		this.inherited(arguments);
+		this.onStreamReady();
 		this._sendLogin();
 	},
 	
@@ -25,7 +26,7 @@ dojo.declare("dojox.xmpp.transportProviders.BoshXhr", dojox.xmpp.transportProvid
 			} catch(e) {
 				console.info("RECD: ", res);
 			}
-    		return this.processDocument(res, rid);
+			return this._processDocument(res, rid);
 		});
 	}
 });
