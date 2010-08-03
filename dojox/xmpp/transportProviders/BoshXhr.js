@@ -32,6 +32,5 @@ dojo.declare("dojox.xmpp.transportProviders.BoshXhr", dojox.xmpp.transportProvid
 });
 
 dojox.xmpp.transportProviders.BoshXhr.check = function(props) {
-    // FIXME: This is wrong. This always returns false.
-    return !!props.bindUrl;
+    return !window.Titanium && !props.useScriptSrcTransport;
 };
