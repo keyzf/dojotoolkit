@@ -7,7 +7,7 @@ dojo.require("dojox.storage.manager");
   have offlineProfile=true when you run the build script:
   ./build.sh action=release profile=offline offlineProfile=true
 */
-dojo.require("dojox.storage.GearsStorageProvider");
+//dojo.require("dojox.storage.GearsStorageProvider");
 //>>excludeStart("offlineProfileExclude", kwArgs.dojoxStorageBuildOption == "offline");
 dojo.require("dojox.storage.WhatWGStorageProvider");
 dojo.require("dojox.storage.FlashStorageProvider");
